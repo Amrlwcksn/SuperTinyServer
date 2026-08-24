@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>SuperTinyServer</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+</head>
+
+
+<body>
+
+<div class="app">
+
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar">
+
+
+        <div class="logo">
+
+            <div class="logo-icon">
+                S
+            </div>
+
+            <div>
+
+                <strong>
+                    SuperTinyServer
+                </strong>
+
+                <small>
+                    SERVER MANAGER
+                </small>
+
+            </div>
+
+        </div>
+
+
+        <div class="server-tree">
+
+            <div class="tree-label">
+                SERVER
+            </div>
+
+            <div class="server-node">
+
+                <span class="status-dot"></span>
+
+                <div>
+
+                    <strong>
+                        SuperTinyServer
+                    </strong>
+
+                    <small>
+                        Android / Termux
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <nav class="menu">
+
+            <button
+                class="menu-item active"
+                data-page="dashboard"
+            >
+
+                <span>▣</span>
+
+                Dashboard
+
+            </button>
+
+
+            <button
+                class="menu-item"
+                data-page="ssh"
+            >
+
+                <span>&gt;_</span>
+
+                SSH Connection
+
+            </button>
+
+
+            <button
+                class="menu-item disabled"
+            >
+
+                <span>⇧</span>
+
+                File Drop
+
+                <small>
+                    SOON
+                </small>
+
+            </button>
+
+
+            <button
+                class="menu-item disabled"
+            >
+
+                <span>◆</span>
+
+                Minecraft
+
+                <small>
+                    SOON
+                </small>
+
+            </button>
+
+        </nav>
+
+
+        <div class="sidebar-footer">
+
+            <span class="status-dot"></span>
+
+            <span>
+                SERVER ONLINE
+            </span>
+
+        </div>
+
+
+    </aside>
+
+
+
+    <!-- MAIN -->
+
+    <main class="main">
+
+
+        <!-- TOPBAR -->
+
+        <header class="topbar">
+
+            <div>
+
+                <div
+                    class="breadcrumb"
+                    id="breadcrumb"
+                >
+
+                    Datacenter /
+                    SuperTinyServer
+
+                </div>
+
+                <h2 id="pageTitle">
+
+                    Dashboard
+
+                </h2>
+
+            </div>
+
+
+            <div class="top-status">
+
+                <span class="status-dot"></span>
+
+                ONLINE
+
+            </div>
+
+        </header>
+
+
+
+        <div class="content">
+
+
+            <!-- =====================
+                 DASHBOARD PAGE
+            ====================== -->
+
+            <section
+                class="page active-page"
+                id="dashboard-page"
+            >
+
+
+                <div class="section-title">
+
+                    <div>
+
+                        <h3>
+                            Resource Usage
+                        </h3>
+
+                        <p>
+                            Live system monitoring
+                        </p>
+
+                    </div>
+
+                    <span class="live">
+
+                        ● LIVE
+
+                    </span>
+
+                </div>
+
+
+                <!-- RESOURCE GRID -->
+
+                <div class="resource-grid">
+
+
+                    <!-- CPU -->
+
+                    <div class="resource-card">
+
+                        <div class="resource-header">
+
+                            <span>
+                                CPU
+                            </span>
+
+                            <strong id="cpuCores">
+                                -
+                            </strong>
+
+                        </div>
+
+
+                        <div class="resource-value">
+
+                            <span id="cpuLoad">
+                                -
+                            </span>
+
+                            <small>
+                                Load Average
+                            </small>
+
+                        </div>
+
+
+                        <div class="progress">
+
+                            <div
+                                class="progress-bar cpu"
+                                id="cpuBar"
+                            ></div>
+
+                        </div>
+
+
+                        <div class="resource-footer">
+
+                            <span>
+                                1 min load
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- MEMORY -->
+
+                    <div class="resource-card">
+
+                        <div class="resource-header">
+
+                            <span>
+                                MEMORY
+                            </span>
+
+                            <strong
+                                id="memoryPercent"
+                            >
+                                -
+                            </strong>
+
+                        </div>
+
+
+                        <div class="resource-value">
+
+                            <span
+                                id="memoryUsed"
+                            >
+                                -
+                            </span>
+
+                            <small>
+                                Used
+                            </small>
+
+                        </div>
+
+
+                        <div class="progress">
+
+                            <div
+                                class="progress-bar memory"
+                                id="memoryBar"
+                            ></div>
+
+                        </div>
+
+
+                        <div
+                            class="resource-footer"
+                            id="memoryTotal"
+                        >
+
+                            -
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- STORAGE -->
+
+                    <div class="resource-card">
+
+                        <div class="resource-header">
+
+                            <span>
+                                STORAGE
+                            </span>
+
+                            <strong
+                                id="storagePercent"
+                            >
+                                -
+                            </strong>
+
+                        </div>
+
+
+                        <div class="resource-value">
+
+                            <span
+                                id="storageUsed"
+                            >
+                                -
+                            </span>
+
+                            <small>
+                                Used
+                            </small>
+
+                        </div>
+
+
+                        <div class="progress">
+
+                            <div
+                                class="progress-bar storage"
+                                id="storageBar"
+                            ></div>
+
+                        </div>
+
+
+                        <div
+                            class="resource-footer"
+                            id="storageTotal"
+                        >
+
+                            -
+
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- SYSTEM INFORMATION -->
+
+                <div class="panel">
+
+                    <div class="panel-header">
+
+                        <h3>
+                            System Information
+                        </h3>
+
+                        <span>
+                            LIVE
+                        </span>
+
+                    </div>
+
+
+                    <div class="info-table">
+
+
+                        <div class="info-row">
+
+                            <span>
+                                Hostname
+                            </span>
+
+                            <strong
+                                id="hostname"
+                            >
+                                -
+                            </strong>
+
+                        </div>
+
+
+                        <div class="info-row">
+
+                            <span>
+                                Platform
+                            </span>
+
+                            <strong
+                                id="platform"
+                            >
+                                -
+                            </strong>
+
+                        </div>
+
+
+                        <div class="info-row">
+
+                            <span>
+                                Node.js
+                            </span>
+
+                            <strong
+                                id="nodeVersion"
+                            >
+                                -
+                            </strong>
+
+                        </div>
+
+
+                        <div class="info-row">
+
+                            <span>
+                                Uptime
+                            </span>
+
+                            <strong
+                                id="uptime"
+                            >
+                                -
+                            </strong>
+
+                        </div>
+
+
+                    </div>
+
+                </div>
+
+
+            </section>
+
+
+
+            <!-- =====================
+                 SSH PAGE
+            ====================== -->
+
+            <section
+                class="page"
+                id="ssh-page"
+            >
+
+
+                <div class="section-title">
+
+                    <div>
+
+                        <h3>
+                            SSH Connection
+                        </h3>
+
+                        <p>
+                            Remote access configuration
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="panel">
+
+
+                    <div class="panel-header">
+
+                        <h3>
+                            Connection Information
+                        </h3>
+
+                        <span class="online-text">
+
+                            ● AVAILABLE
+
+                        </span>
+
+                    </div>
+
+
+
+                    <div class="info-table">
+
+
+                        <div class="info-row">
+
+                            <span>
+                                Username
+                            </span>
+
+                            <strong
+                                id="username"
+                            >
+                                -
+                            </strong>
+
+                        </div>
+
+
+                        <div class="info-row">
+
+                            <span>
+                                IP Address
+                            </span>
+
+                            <strong
+                                id="ip"
+                            >
+                                -
+                            </strong>
+
+                        </div>
+
+
+                        <div class="info-row">
+
+                            <span>
+                                SSH Port
+                            </span>
+
+                            <strong
+                                id="port"
+                            >
+                                8022
+                            </strong>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="command-section">
+
+                        <span>
+                            SSH COMMAND
+                        </span>
+
+                        <code
+                            id="sshCommand"
+                        >
+                            Loading...
+                        </code>
+
+
+                        <button
+                            id="copyButton"
+                        >
+
+                            COPY COMMAND
+
+                        </button>
+
+                    </div>
+
+
+                </div>
+
+
+            </section>
+
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<script src="script.js"></script>
+
+</body>
+
+</html>
