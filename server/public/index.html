@@ -105,31 +105,13 @@
 
 
             <button
-                class="menu-item disabled"
+                class="menu-item"
+                data-page="filedrop"
             >
 
-                <span>⇧</span>
+                <span>📁</span>
 
                 File Drop
-
-                <small>
-                    SOON
-                </small>
-
-            </button>
-
-
-            <button
-                class="menu-item disabled"
-            >
-
-                <span>◆</span>
-
-                Minecraft
-
-                <small>
-                    SOON
-                </small>
 
             </button>
 
@@ -616,6 +598,165 @@
 
                 </div>
 
+
+            </section>
+
+
+
+            <!-- =====================
+                 FILE DROP PAGE
+            ====================== -->
+
+            <section
+                class="page"
+                id="filedrop-page"
+            >
+
+                <div class="section-title">
+
+                    <div>
+
+                        <h3>
+                            File Sharing (File Drop)
+                        </h3>
+
+                        <p>
+                            Storage location: <span id="storagePath" class="storage-path-badge">Loading...</span>
+                        </p>
+
+                    </div>
+
+                    <button class="btn-refresh" id="refreshFilesBtn">
+                        🔄 Refresh
+                    </button>
+
+                </div>
+
+
+                <!-- DROPZONE -->
+
+                <div class="dropzone" id="dropzone">
+
+                    <input type="file" id="fileInput" multiple style="display: none;">
+
+                    <div class="dropzone-icon">
+                        📥
+                    </div>
+
+                    <h4>
+                        Drag & Drop files here
+                    </h4>
+
+                    <p>
+                        or click to select files from your device
+                    </p>
+
+                    <button class="btn-browse" type="button" id="browseBtn">
+                        BROWSE FILES
+                    </button>
+
+                </div>
+
+
+                <!-- UPLOAD STATUS / PROGRESS -->
+
+                <div class="upload-status" id="uploadStatus" style="display: none;">
+
+                    <div class="upload-status-header">
+
+                        <span id="uploadStatusText">Uploading files...</span>
+
+                        <strong id="uploadPercent">0%</strong>
+
+                    </div>
+
+                    <div class="progress">
+
+                        <div class="progress-bar file-progress" id="uploadBar" style="width: 0%;"></div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- SUMMARY STATS -->
+
+                <div class="file-summary">
+
+                    <div class="summary-card">
+
+                        <span>TOTAL FILES</span>
+
+                        <strong id="totalFilesCount">0</strong>
+
+                    </div>
+
+                    <div class="summary-card">
+
+                        <span>STORAGE USED</span>
+
+                        <strong id="totalFilesSize">0 MB</strong>
+
+                    </div>
+
+                </div>
+
+
+                <!-- FILE LIST PANEL -->
+
+                <div class="panel">
+
+                    <div class="panel-header">
+
+                        <h3>
+                            Shared Files
+                        </h3>
+
+                        <span class="online-text">
+                            ● DIRECTORY ACCESS
+                        </span>
+
+                    </div>
+
+                    <div class="table-responsive">
+
+                        <table class="file-table">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>FILE NAME</th>
+
+                                    <th>SIZE</th>
+
+                                    <th>MODIFIED</th>
+
+                                    <th style="text-align: right;">ACTIONS</th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="fileTableBody">
+
+                                <tr>
+
+                                    <td colspan="4" class="empty-state">
+
+                                        Loading shared files...
+
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
 
             </section>
 
