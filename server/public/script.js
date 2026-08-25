@@ -818,14 +818,24 @@ function initTerminal() {
         }
     });
 
-    if (typeof FitAddon !== "undefined" && FitAddon.FitAddon) {
-        fitAddon = new FitAddon.FitAddon();
-        term.loadAddon(fitAddon);
+    let FitClass = null;
+    if (typeof FitAddon !== "undefined") {
+        FitClass = FitAddon.FitAddon || FitAddon;
+    }
+    if (FitClass) {
+        try {
+            fitAddon = new FitClass();
+            term.loadAddon(fitAddon);
+        } catch (e) {
+            console.warn("FitAddon load error:", e);
+        }
     }
 
     term.open(container);
     if (fitAddon) {
-        setTimeout(() => fitAddon.fit(), 50);
+        setTimeout(() => {
+            try { fitAddon.fit(); } catch (e) {}
+        }, 50);
     }
 
     term.onData((data) => {
