@@ -1610,6 +1610,136 @@ body {
 }
 
 
+
+/* TERMINAL PAGE STYLING */
+
+.terminal-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.terminal-status-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .terminal-status-badge {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.status-dot-online {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #30d158;
+    display: inline-block;
+    box-shadow: 0 0 6px rgba(48, 209, 88, 0.6);
+}
+
+.status-dot-offline {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ff453a;
+    display: inline-block;
+}
+
+.terminal-window {
+    background: #0d1117;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 210px);
+    min-height: 480px;
+}
+
+.terminal-window-header {
+    background: #161b22;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    user-select: none;
+}
+
+.terminal-dots {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.terminal-dots .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.terminal-dots .dot.red { background: #ff5f56; }
+.terminal-dots .dot.yellow { background: #ffbd2e; }
+.terminal-dots .dot.green { background: #27c93f; }
+
+.terminal-title {
+    font-family: "SF Mono", Monaco, Consolas, monospace;
+    font-size: 12px;
+    color: #8b949e;
+    font-weight: 500;
+}
+
+.terminal-font-controls {
+    display: flex;
+    gap: 4px;
+}
+
+.terminal-font-controls button {
+    background: rgba(255, 255, 255, 0.1);
+    color: #c9d1d9;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.terminal-font-controls button:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.terminal-body {
+    flex: 1;
+    padding: 10px 14px;
+    background: #0d1117;
+    overflow: hidden;
+}
+
+.terminal-body .xterm {
+    height: 100%;
+}
+
+.terminal-body .xterm-viewport {
+    background-color: #0d1117 !important;
+}
+
+
 /* MOBILE RESPONSIVE */
 
 @media (max-width: 850px) {
@@ -1657,4 +1787,5 @@ body {
     }
 
 }
+
 

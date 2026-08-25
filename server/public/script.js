@@ -178,6 +178,16 @@ menuItems.forEach(item => {
         } else if (page === "filedrop") {
             pageTitle = "File Sharing (File Drop)";
             loadFileList();
+        } else if (page === "terminal") {
+            pageTitle = "Terminal";
+            if (!terminalInitialized) {
+                initTerminal();
+            } else {
+                setTimeout(() => {
+                    if (fitAddon) fitAddon.fit();
+                    if (term) term.focus();
+                }, 100);
+            }
         } else if (page === "credits") {
             pageTitle = "Credits & About";
         }
@@ -695,6 +705,182 @@ function initTheme() {
 
 /*
 |--------------------------------------------------------------------------
+| WEB TERMINAL
+|--------------------------------------------------------------------------
+*/
+let terminalInitialized = false;
+let term = null;
+let fitAddon = null;
+let termWs = null;
+let termFontSize = 14;
+
+function setTerminalStatus(online, text) {
+    const dot = document.getElementById("terminalStatusDot");
+    const textEl = document.getElementById("terminalStatusText");
+    if (dot) {
+        dot.className = online ? "status-dot-online" : "status-dot-offline";
+    }
+    if (textEl) {
+        textEl.textContent = text;
+    }
+}
+
+function connectTerminalWebSocket() {
+    if (termWs) {
+        try {
+            termWs.close();
+        } catch (e) {}
+    }
+
+    setTerminalStatus(false, "Connecting...");
+    if (term) {
+        term.write("\r\n\x1b[33mConnecting to terminal server...\x1b[0m\r\n");
+    }
+
+    const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${protocol}//${location.host}/api/terminal/ws`;
+
+    try {
+        termWs = new WebSocket(wsUrl);
+    } catch (e) {
+        setTerminalStatus(false, "Connection Error");
+        if (term) term.write(`\r\n\x1b[31mFailed to connect WebSocket: ${e.message}\x1b[0m\r\n`);
+        return;
+    }
+
+    termWs.onopen = () => {
+        setTerminalStatus(true, "Connected");
+        if (term) {
+            term.write("\x1b[32mConnected to SuperTinyServer Terminal.\x1b[0m\r\n");
+            term.focus();
+            if (fitAddon) fitAddon.fit();
+            if (termWs.readyState === WebSocket.OPEN && term) {
+                termWs.send(JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows }));
+            }
+        }
+    };
+
+    termWs.onmessage = (evt) => {
+        if (term) {
+            term.write(evt.data);
+        }
+    };
+
+    termWs.onerror = () => {
+        setTerminalStatus(false, "Connection Error");
+    };
+
+    termWs.onclose = () => {
+        setTerminalStatus(false, "Disconnected");
+        if (term) {
+            term.write("\r\n\x1b[31m[Terminal Session Disconnected]\x1b[0m\r\n");
+        }
+    };
+}
+
+function initTerminal() {
+    const container = document.getElementById("terminalContainer");
+    if (!container) return;
+
+    if (typeof Terminal === "undefined") {
+        container.innerHTML = '<div style="color: #ff5f56; padding: 20px; font-family: monospace;">Terminal library (xterm.js) failed to load.</div>';
+        return;
+    }
+
+    term = new Terminal({
+        cursorBlink: true,
+        fontSize: termFontSize,
+        fontFamily: '"SF Mono", Monaco, Consolas, "Courier New", monospace',
+        theme: {
+            background: "#0d1117",
+            foreground: "#c9d1d9",
+            cursor: "#58a6ff",
+            selectionBackground: "rgba(56, 139, 253, 0.4)",
+            black: "#484f58",
+            red: "#ff7b72",
+            green: "#3fb950",
+            yellow: "#d29922",
+            blue: "#58a6ff",
+            magenta: "#bc8cff",
+            cyan: "#39c5cf",
+            white: "#b1bac4",
+            brightBlack: "#6e7681",
+            brightRed: "#ffa198",
+            brightGreen: "#56d364",
+            brightYellow: "#e3b341",
+            brightBlue: "#79c0ff",
+            brightMagenta: "#d2a8ff",
+            brightCyan: "#56d4dd",
+            brightWhite: "#f0f6fc"
+        }
+    });
+
+    if (typeof FitAddon !== "undefined" && FitAddon.FitAddon) {
+        fitAddon = new FitAddon.FitAddon();
+        term.loadAddon(fitAddon);
+    }
+
+    term.open(container);
+    if (fitAddon) {
+        setTimeout(() => fitAddon.fit(), 50);
+    }
+
+    term.onData((data) => {
+        if (termWs && termWs.readyState === WebSocket.OPEN) {
+            termWs.send(data);
+        }
+    });
+
+    term.onResize((size) => {
+        if (termWs && termWs.readyState === WebSocket.OPEN) {
+            termWs.send(JSON.stringify({ type: "resize", cols: size.cols, rows: size.rows }));
+        }
+    });
+
+    const clearBtn = document.getElementById("clearTerminalBtn");
+    if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+            if (term) term.clear();
+        });
+    }
+
+    const reconnectBtn = document.getElementById("reconnectTerminalBtn");
+    if (reconnectBtn) {
+        reconnectBtn.addEventListener("click", () => {
+            connectTerminalWebSocket();
+        });
+    }
+
+    const incFontBtn = document.getElementById("termFontIncBtn");
+    if (incFontBtn) {
+        incFontBtn.addEventListener("click", () => {
+            termFontSize = Math.min(24, termFontSize + 1);
+            term.options.fontSize = termFontSize;
+            if (fitAddon) fitAddon.fit();
+        });
+    }
+
+    const decFontBtn = document.getElementById("termFontDecBtn");
+    if (decFontBtn) {
+        decFontBtn.addEventListener("click", () => {
+            termFontSize = Math.max(10, termFontSize - 1);
+            term.options.fontSize = termFontSize;
+            if (fitAddon) fitAddon.fit();
+        });
+    }
+
+    window.addEventListener("resize", () => {
+        if (fitAddon && document.getElementById("terminal-page")?.classList.contains("active-page")) {
+            fitAddon.fit();
+        }
+    });
+
+    terminalInitialized = true;
+    connectTerminalWebSocket();
+}
+
+/*
+|--------------------------------------------------------------------------
 | INITIAL LOAD & AUTO REFRESH
 |--------------------------------------------------------------------------
 */
@@ -704,3 +890,4 @@ loadSystemStats();
 
 setInterval(loadSystemStats, 3000);
 setInterval(loadServerInfo, 10000);
+

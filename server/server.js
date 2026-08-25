@@ -3,9 +3,12 @@ const os = require("os");
 const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
-const { execSync } = require("child_process");
+const { execSync, spawn } = require("child_process");
+const http = require("http");
+const { WebSocketServer } = require("ws");
 
 const app = express();
+const server = http.createServer(app);
 const PORT = 3000;
 
 app.use(express.json());
@@ -482,11 +485,119 @@ app.delete("/api/files", (req, res) => {
 
 /*
 |--------------------------------------------------------------------------
+| WEB TERMINAL WEBSOCKET SUITE
+|--------------------------------------------------------------------------
+*/
+
+const wss = new WebSocketServer({ server, path: "/api/terminal/ws" });
+
+wss.on("connection", (ws) => {
+    let shellBin = process.env.SHELL;
+    if (!shellBin || !fs.existsSync(shellBin)) {
+        if (fs.existsSync("/bin/bash")) {
+            shellBin = "/bin/bash";
+        } else if (fs.existsSync("/data/data/com.termux/files/usr/bin/bash")) {
+            shellBin = "/data/data/com.termux/files/usr/bin/bash";
+        } else {
+            shellBin = "/bin/sh";
+        }
+    }
+
+    const homeDir = fs.existsSync("/data/data/com.termux/files/home")
+        ? "/data/data/com.termux/files/home"
+        : os.homedir();
+
+    const env = {
+        ...process.env,
+        TERM: "xterm-256color",
+        COLORTERM: "truecolor",
+        HOME: homeDir
+    };
+
+    let shellProc;
+
+    try {
+        if (os.platform() !== "win32" && (fs.existsSync("/usr/bin/script") || fs.existsSync("/data/data/com.termux/files/usr/bin/script"))) {
+            const scriptBin = fs.existsSync("/usr/bin/script") ? "/usr/bin/script" : "/data/data/com.termux/files/usr/bin/script";
+            shellProc = spawn(scriptBin, ["-q", "-c", shellBin, "/dev/null"], {
+                cwd: homeDir,
+                env
+            });
+        } else {
+            shellProc = spawn(shellBin, ["-i"], {
+                cwd: homeDir,
+                env
+            });
+        }
+    } catch (err) {
+        shellProc = spawn(shellBin, [], {
+            cwd: homeDir,
+            env
+        });
+    }
+
+    const sendToClient = (data) => {
+        if (ws.readyState === ws.OPEN) {
+            ws.send(data.toString());
+        }
+    };
+
+    if (shellProc.stdout) shellProc.stdout.on("data", sendToClient);
+    if (shellProc.stderr) shellProc.stderr.on("data", sendToClient);
+
+    shellProc.on("error", (err) => {
+        sendToClient(`\r\n[Terminal Error: ${err.message}]\r\n`);
+    });
+
+    shellProc.on("close", (code) => {
+        sendToClient(`\r\n[Process exited with code ${code}]\r\n`);
+        if (ws.readyState === ws.OPEN) {
+            ws.close();
+        }
+    });
+
+    ws.on("message", (msg) => {
+        try {
+            const strMsg = msg.toString();
+            if (strMsg.startsWith("{") && strMsg.endsWith("}")) {
+                const parsed = JSON.parse(strMsg);
+                if (parsed.type === "resize" && parsed.cols && parsed.rows) {
+                    if (shellProc && shellProc.stdin && shellProc.stdin.writable && os.platform() !== "win32") {
+                        try {
+                            shellProc.stdin.write(`stty cols ${parsed.cols} rows ${parsed.rows}\n`);
+                        } catch (e) {}
+                    }
+                    return;
+                }
+            }
+
+            if (shellProc && shellProc.stdin && shellProc.stdin.writable) {
+                shellProc.stdin.write(msg);
+            }
+        } catch (e) {
+            if (shellProc && shellProc.stdin && shellProc.stdin.writable) {
+                shellProc.stdin.write(msg);
+            }
+        }
+    });
+
+    ws.on("close", () => {
+        if (shellProc) {
+            try {
+                shellProc.kill("SIGTERM");
+            } catch (e) {}
+        }
+    });
+});
+
+
+/*
+|--------------------------------------------------------------------------
 | START SERVER
 |--------------------------------------------------------------------------
 */
 
-app.listen(
+server.listen(
     PORT,
     "0.0.0.0",
     () => {
@@ -502,5 +613,6 @@ app.listen(
 
     }
 );
+
 
 
