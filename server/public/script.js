@@ -423,9 +423,11 @@ if (copyBtn) {
 
 /*
 |--------------------------------------------------------------------------
-| FILE DROP / FILE SHARING LOGIC
+| FILE DROP / FILE SHARING LOGIC WITH SUBFOLDER SUPPORT
 |--------------------------------------------------------------------------
 */
+
+let currentSubpath = "";
 
 function getFileIcon(filename) {
     const ext = filename.split(".").pop().toLowerCase();
@@ -448,7 +450,7 @@ function getFileIcon(filename) {
     if (["js", "json", "html", "css", "py", "sh", "c", "cpp", "java"].includes(ext)) {
         return "💻";
     }
-    if (["txt", "md", "doc", "docx", "pdf"].includes(ext)) {
+    if (["txt", "md", "doc", "docx"].includes(ext)) {
         return "📝";
     }
     return "📄";
@@ -466,64 +468,131 @@ function formatDate(dateString) {
     });
 }
 
-async function loadFileList() {
+function updateBreadcrumbs(subpath) {
+    const container = document.getElementById("folderBreadcrumbs");
+    if (!container) return;
+
+    const parts = subpath ? subpath.split("/").filter(Boolean) : [];
+    
+    let html = `<span class="breadcrumb-item ${parts.length === 0 ? 'active' : ''}" onclick="navigateToPath('')">🏠 Root</span>`;
+
+    let accumulatedPath = "";
+    parts.forEach((part, index) => {
+        accumulatedPath += (accumulatedPath ? "/" : "") + part;
+        const isLast = index === parts.length - 1;
+        
+        html += ` <span class="breadcrumb-separator">/</span> `;
+        if (isLast) {
+            html += `<span class="breadcrumb-item active">📁 ${escapeHtml(part)}</span>`;
+        } else {
+            const pathArg = escapeJsString(accumulatedPath);
+            html += `<span class="breadcrumb-item" onclick="navigateToPath('${pathArg}')">📁 ${escapeHtml(part)}</span>`;
+        }
+    });
+
+    container.innerHTML = html;
+}
+
+function navigateToPath(subpath) {
+    currentSubpath = subpath || "";
+    loadFileList(currentSubpath);
+}
+
+function openFolder(folderName) {
+    const newPath = currentSubpath ? `${currentSubpath}/${folderName}` : folderName;
+    navigateToPath(newPath);
+}
+
+async function loadFileList(subpath = currentSubpath) {
     const tableBody = document.getElementById("fileTableBody");
     if (!tableBody) return;
 
     try {
-        const response = await fetch("/api/files");
+        const queryPath = encodeURIComponent(subpath || "");
+        const response = await fetch(`/api/files?path=${queryPath}`);
         const data = await response.json();
 
-        if (data.uploadDir) {
+        if (data.baseDir) {
             const storagePathEl = document.getElementById("storagePath");
             if (storagePathEl) {
-                storagePathEl.textContent = data.uploadDir;
+                const fullPath = data.currentPath ? `${data.baseDir}/${data.currentPath}` : data.baseDir;
+                storagePathEl.textContent = fullPath;
             }
         }
 
-        const files = data.files || [];
+        currentSubpath = data.currentPath || "";
+        updateBreadcrumbs(currentSubpath);
+
+        const items = data.items || [];
         
         // Update summary cards
         const countEl = document.getElementById("totalFilesCount");
         const sizeEl = document.getElementById("totalFilesSize");
         
-        if (countEl) countEl.textContent = files.length;
+        if (countEl) countEl.textContent = items.length;
         
-        const totalSizeBytes = files.reduce((acc, file) => acc + (file.size || 0), 0);
+        const totalSizeBytes = items.reduce((acc, item) => acc + (item.size || 0), 0);
         if (sizeEl) sizeEl.textContent = formatBytes(totalSizeBytes);
 
-        if (files.length === 0) {
+        if (items.length === 0) {
             tableBody.innerHTML = `
                 <tr>
                     <td colspan="4" class="empty-state">
-                        Belum ada file tersimpan. Silakan drag & drop atau upload file.
+                        Folder ini kosong. Silakan buat folder baru atau drag & drop file.
                     </td>
                 </tr>
             `;
             return;
         }
 
-        tableBody.innerHTML = files.map(file => {
-            const icon = getFileIcon(file.name);
-            const formattedSize = formatBytes(file.size);
-            const formattedTime = formatDate(file.mtime);
-            const encodedName = encodeURIComponent(file.name);
+        tableBody.innerHTML = items.map(item => {
+            const isDir = item.isDirectory;
+            const icon = isDir ? "📁" : getFileIcon(item.name);
+            const formattedSize = isDir ? "-" : formatBytes(item.size);
+            const formattedTime = formatDate(item.mtime);
+            const escapedName = escapeJsString(item.name);
+            const htmlName = escapeHtml(item.name);
+
+            if (isDir) {
+                return `
+                    <tr class="folder-row">
+                        <td>
+                            <div class="file-name-cell">
+                                <span class="file-icon">${icon}</span>
+                                <span class="folder-link" onclick="openFolder('${escapedName}')">${htmlName}</span>
+                            </div>
+                        </td>
+                        <td>-</td>
+                        <td>${formattedTime}</td>
+                        <td style="text-align: right;">
+                            <button class="btn-action btn-open" onclick="openFolder('${escapedName}')">
+                                📂 Buka
+                            </button>
+                            <button class="btn-action btn-delete" onclick="deleteItem('${escapedName}', true)">
+                                🗑 Hapus
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }
+
+            const downloadUrl = `/api/files/download?path=${encodeURIComponent(currentSubpath)}&filename=${encodeURIComponent(item.name)}`;
 
             return `
                 <tr>
                     <td>
                         <div class="file-name-cell">
                             <span class="file-icon">${icon}</span>
-                            <span>${escapeHtml(file.name)}</span>
+                            <span>${htmlName}</span>
                         </div>
                     </td>
                     <td>${formattedSize}</td>
                     <td>${formattedTime}</td>
                     <td style="text-align: right;">
-                        <a href="/api/files/download/${encodedName}" class="btn-action btn-download" download>
+                        <a href="${downloadUrl}" class="btn-action btn-download" download>
                             ⬇ Download
                         </a>
-                        <button class="btn-action btn-delete" onclick="deleteFile('${escapeJsString(file.name)}')">
+                        <button class="btn-action btn-delete" onclick="deleteItem('${escapedName}', false)">
                             🗑 Delete
                         </button>
                     </td>
@@ -560,25 +629,67 @@ function escapeJsString(str) {
     return str.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
 
-async function deleteFile(filename) {
-    if (!confirm(`Apakah Anda yakin ingin menghapus file "${filename}"?`)) {
+async function createFolder() {
+    const input = document.getElementById("newFolderNameInput");
+    if (!input) return;
+
+    const folderName = input.value.trim();
+    if (!folderName) {
+        alert("Masukkan nama folder terlebih dahulu");
         return;
     }
 
     try {
-        const response = await fetch(`/api/files/${encodeURIComponent(filename)}`, {
-            method: "DELETE"
+        const response = await fetch("/api/files/mkdir", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                path: currentSubpath,
+                folderName
+            })
         });
+
+        const data = await response.json();
+        if (response.ok) {
+            input.value = "";
+            const newFolderBar = document.getElementById("newFolderBar");
+            if (newFolderBar) newFolderBar.style.display = "none";
+            loadFileList(currentSubpath);
+        } else {
+            alert(data.error || "Gagal membuat folder");
+        }
+    } catch (error) {
+        console.error("Failed to create folder:", error);
+        alert("Gagal terhubung ke server untuk membuat folder.");
+    }
+}
+
+async function deleteItem(name, isDirectory) {
+    const typeLabel = isDirectory ? "folder beserta isinya" : "file";
+    if (!confirm(`Apakah Anda yakin ingin menghapus ${typeLabel} "${name}"?`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch("/api/files", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                path: currentSubpath,
+                name
+            })
+        });
+
         const data = await response.json();
 
         if (response.ok) {
-            loadFileList();
+            loadFileList(currentSubpath);
         } else {
-            alert(data.error || "Gagal menghapus file");
+            alert(data.error || `Gagal menghapus ${typeLabel}`);
         }
     } catch (error) {
-        console.error("Failed to delete file:", error);
-        alert("Gagal terhubung ke server untuk menghapus file.");
+        console.error("Failed to delete item:", error);
+        alert("Gagal terhubung ke server untuk menghapus item.");
     }
 }
 
@@ -600,8 +711,9 @@ function uploadFiles(files) {
         formData.append("files", files[i]);
     }
 
+    const uploadUrl = `/api/files/upload?path=${encodeURIComponent(currentSubpath)}`;
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/files/upload", true);
+    xhr.open("POST", uploadUrl, true);
 
     xhr.upload.onprogress = (e) => {
         if (e.lengthComputable) {
@@ -613,14 +725,14 @@ function uploadFiles(files) {
 
     xhr.onload = () => {
         if (xhr.status === 200) {
-            if (uploadStatusText) uploadStatusText.textContent = "✓ Upload berhasil!";
+            if (uploadStatusText) uploadStatusText.textContent = `✓ ${files.length} file berhasil diunggah!`;
             if (uploadPercent) uploadPercent.textContent = "100%";
             if (uploadBar) uploadBar.style.width = "100%";
 
             const fileInput = document.getElementById("fileInput");
             if (fileInput) fileInput.value = "";
 
-            loadFileList();
+            loadFileList(currentSubpath);
 
             setTimeout(() => {
                 if (uploadStatus) uploadStatus.style.display = "none";
@@ -649,6 +761,43 @@ document.addEventListener("DOMContentLoaded", () => {
     const fileInput = document.getElementById("fileInput");
     const browseBtn = document.getElementById("browseBtn");
     const refreshBtn = document.getElementById("refreshFilesBtn");
+    const newFolderBtn = document.getElementById("newFolderBtn");
+    const newFolderBar = document.getElementById("newFolderBar");
+    const confirmCreateFolderBtn = document.getElementById("confirmCreateFolderBtn");
+    const cancelCreateFolderBtn = document.getElementById("cancelCreateFolderBtn");
+    const newFolderNameInput = document.getElementById("newFolderNameInput");
+
+    if (newFolderBtn && newFolderBar) {
+        newFolderBtn.addEventListener("click", () => {
+            const isHidden = newFolderBar.style.display === "none";
+            newFolderBar.style.display = isHidden ? "flex" : "none";
+            if (isHidden && newFolderNameInput) {
+                newFolderNameInput.focus();
+            }
+        });
+    }
+
+    if (cancelCreateFolderBtn && newFolderBar) {
+        cancelCreateFolderBtn.addEventListener("click", () => {
+            newFolderBar.style.display = "none";
+            if (newFolderNameInput) newFolderNameInput.value = "";
+        });
+    }
+
+    if (confirmCreateFolderBtn) {
+        confirmCreateFolderBtn.addEventListener("click", createFolder);
+    }
+
+    if (newFolderNameInput) {
+        newFolderNameInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                createFolder();
+            } else if (e.key === "Escape") {
+                if (newFolderBar) newFolderBar.style.display = "none";
+                newFolderNameInput.value = "";
+            }
+        });
+    }
 
     if (dropzone && fileInput) {
         dropzone.addEventListener("click", (e) => {
@@ -695,10 +844,38 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (refreshBtn) {
         refreshBtn.addEventListener("click", () => {
-            loadFileList();
+            loadFileList(currentSubpath);
         });
     }
 });
+
+
+/*
+|--------------------------------------------------------------------------
+| INITIAL LOAD
+|--------------------------------------------------------------------------
+*/
+
+loadServerInfo();
+loadSystemStats();
+
+
+/*
+|--------------------------------------------------------------------------
+| AUTO REFRESH
+|--------------------------------------------------------------------------
+*/
+
+setInterval(
+    loadSystemStats,
+    3000
+);
+
+setInterval(
+    loadServerInfo,
+    10000
+);
+
 
 
 /*
