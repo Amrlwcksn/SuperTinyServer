@@ -12,6 +12,12 @@
 
     <title>SuperTinyServer</title>
 
+    <link rel="icon" type="image/png" href="semut.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <link
         rel="stylesheet"
         href="style.css"
@@ -29,12 +35,9 @@
 
     <aside class="sidebar">
 
-
         <div class="logo">
 
-            <div class="logo-icon">
-                S
-            </div>
+            <img src="semut.png" alt="SuperTinyServer Semut Icon" class="logo-img">
 
             <div>
 
@@ -85,9 +88,9 @@
                 data-page="dashboard"
             >
 
-                <span>▣</span>
+                <svg class="menu-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
 
-                Dashboard
+                <span>Dashboard</span>
 
             </button>
 
@@ -97,39 +100,33 @@
                 data-page="ssh"
             >
 
-                <span>&gt;_</span>
+                <svg class="menu-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
 
-                SSH Connection
-
-            </button>
-
-
-            <button
-                class="menu-item disabled"
-            >
-
-                <span>⇧</span>
-
-                File Drop
-
-                <small>
-                    SOON
-                </small>
+                <span>SSH Connection</span>
 
             </button>
 
 
             <button
-                class="menu-item disabled"
+                class="menu-item"
+                data-page="filedrop"
             >
 
-                <span>◆</span>
+                <svg class="menu-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
 
-                Minecraft
+                <span>File Drop</span>
 
-                <small>
-                    SOON
-                </small>
+            </button>
+
+
+            <button
+                class="menu-item"
+                data-page="credits"
+            >
+
+                <svg class="menu-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+
+                <span>Credits & About</span>
 
             </button>
 
@@ -181,11 +178,20 @@
             </div>
 
 
-            <div class="top-status">
+            <div class="topbar-actions">
 
-                <span class="status-dot"></span>
+                <button class="theme-toggle-btn" id="themeToggleBtn" type="button" title="Ganti Tema Light / Dark">
+                    <svg class="theme-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                    <span id="themeToggleText">Dark Mode</span>
+                </button>
 
-                ONLINE
+                <div class="top-status">
+
+                    <span class="status-dot"></span>
+
+                    ONLINE
+
+                </div>
 
             </div>
 
@@ -221,9 +227,7 @@
                     </div>
 
                     <span class="live">
-
-                        ● LIVE
-
+                        <span class="live-dot"></span> LIVE
                     </span>
 
                 </div>
@@ -530,9 +534,7 @@
                         </h3>
 
                         <span class="online-text">
-
                             ● AVAILABLE
-
                         </span>
 
                     </div>
@@ -620,6 +622,299 @@
             </section>
 
 
+
+            <!-- =====================
+                 FILE DROP PAGE
+            ====================== -->
+
+            <section
+                class="page"
+                id="filedrop-page"
+            >
+
+                <div class="section-title">
+
+                    <div>
+
+                        <h3>
+                            File Sharing (File Drop)
+                        </h3>
+
+                        <p>
+                            Storage location: <span id="storagePath" class="storage-path-badge">Loading...</span>
+                        </p>
+
+                    </div>
+
+                    <div class="action-buttons">
+
+                        <button class="btn-primary" id="newFolderBtn">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+                            <span>New Folder</span>
+                        </button>
+
+                        <button class="btn-refresh" id="refreshFilesBtn">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                            <span>Refresh</span>
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- NEW FOLDER BAR (HIDDEN BY DEFAULT) -->
+
+                <div class="new-folder-bar" id="newFolderBar" style="display: none;">
+
+                    <input
+                        type="text"
+                        id="newFolderNameInput"
+                        placeholder="Nama folder baru..."
+                        autocomplete="off"
+                    >
+
+                    <button id="confirmCreateFolderBtn" class="btn-confirm">
+                        BUAT FOLDER
+                    </button>
+
+                    <button id="cancelCreateFolderBtn" class="btn-cancel">
+                        BATAL
+                    </button>
+
+                </div>
+
+
+                <!-- BREADCRUMB NAVIGATION -->
+
+                <div class="path-breadcrumbs" id="folderBreadcrumbs">
+
+                    <span class="breadcrumb-item active" data-path="">
+                        Root
+                    </span>
+
+                </div>
+
+
+                <!-- DROPZONE -->
+
+                <div class="dropzone" id="dropzone">
+
+                    <input type="file" id="fileInput" multiple style="display: none;">
+
+                    <div class="dropzone-icon">
+                        <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    </div>
+
+                    <h4>
+                        Drag & Drop files here
+                    </h4>
+
+                    <p>
+                        or click to select multiple files from your device
+                    </p>
+
+                    <button class="btn-browse" type="button" id="browseBtn">
+                        BROWSE FILES
+                    </button>
+
+                </div>
+
+
+                <!-- UPLOAD STATUS / PROGRESS -->
+
+                <div class="upload-status" id="uploadStatus" style="display: none;">
+
+                    <div class="upload-status-header">
+
+                        <span id="uploadStatusText">Uploading files...</span>
+
+                        <strong id="uploadPercent">0%</strong>
+
+                    </div>
+
+                    <div class="progress">
+
+                        <div class="progress-bar file-progress" id="uploadBar" style="width: 0%;"></div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- SUMMARY STATS -->
+
+                <div class="file-summary">
+
+                    <div class="summary-card">
+
+                        <span>TOTAL ITEMS IN FOLDER</span>
+
+                        <strong id="totalFilesCount">0</strong>
+
+                    </div>
+
+                    <div class="summary-card">
+
+                        <span>STORAGE USED</span>
+
+                        <strong id="totalFilesSize">0 MB</strong>
+
+                    </div>
+
+                </div>
+
+
+                <!-- FILE LIST PANEL -->
+
+                <div class="panel">
+
+                    <div class="panel-header">
+
+                        <h3>
+                            Folder Contents
+                        </h3>
+
+                        <span class="online-text">
+                            ● DIRECTORY ACCESS
+                        </span>
+
+                    </div>
+
+                    <div class="table-responsive">
+
+                        <table class="file-table">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>NAME</th>
+
+                                    <th>SIZE</th>
+
+                                    <th>MODIFIED</th>
+
+                                    <th style="text-align: right;">ACTIONS</th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="fileTableBody">
+
+                                <tr>
+
+                                    <td colspan="4" class="empty-state">
+
+                                        Loading shared files...
+
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- =====================
+                 CREDITS PAGE
+            ====================== -->
+
+            <section
+                class="page"
+                id="credits-page"
+            >
+
+                <div class="section-title">
+
+                    <div>
+
+                        <h3>
+                            Credits & About
+                        </h3>
+
+                        <p>
+                            Informasi proyek dan pengembang SuperTinyServer
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="panel credits-panel">
+
+                    <div class="credits-header">
+
+                        <img
+                            src="STSLogo.png"
+                            alt="SuperTinyServer Logo"
+                            class="sts-logo"
+                        >
+
+                        <h2>SuperTinyServer</h2>
+
+                        <span class="version-badge">
+                            v0.1.0
+                        </span>
+
+                    </div>
+
+
+                    <div class="credits-body">
+
+                        <p class="project-desc">
+                            <strong>SuperTinyServer (STS)</strong> adalah mini server berbasis Android dan Termux yang dirancang untuk mengubah perangkat Android tablet/smartphone menjadi server portable ringan, hemat daya, dan mudah dinavigasi secara lokal.
+                        </p>
+
+                        <div class="credits-box">
+
+                            <h4>Pengembang & Kontributor</h4>
+
+                            <p>
+                                Dikembangkan sebagai solusi praktis untuk memantau performa tablet, melihat IP server secara otomatis, dan berbagi file antar perangkat lokal (File Drop) melalui antarmuka web modern & responsif.
+                            </p>
+
+                        </div>
+
+                        <div class="credits-box">
+
+                            <h4>Teknologi Utama</h4>
+
+                            <div class="tech-tags">
+
+                                <span class="tech-tag">Android</span>
+
+                                <span class="tech-tag">Termux</span>
+
+                                <span class="tech-tag">Node.js</span>
+
+                                <span class="tech-tag">Express.js</span>
+
+                                <span class="tech-tag">OpenSSH</span>
+
+                                <span class="tech-tag">HTML5 / CSS3 / JS</span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
         </div>
 
     </main>
@@ -632,3 +927,5 @@
 </body>
 
 </html>
+
+
