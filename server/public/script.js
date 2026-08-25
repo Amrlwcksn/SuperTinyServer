@@ -433,30 +433,27 @@ if (copyBtn) {
 let currentSubpath = "";
 
 function getFileIcon(filename) {
-    const ext = filename.split(".").pop().toLowerCase();
+    const ext = (filename || "").split(".").pop().toLowerCase();
     
     if (["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp"].includes(ext)) {
-        return "🖼️";
+        return `<svg class="file-svg image-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
     }
     if (["mp4", "mkv", "avi", "mov", "webm"].includes(ext)) {
-        return "🎬";
+        return `<svg class="file-svg video-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>`;
     }
     if (["mp3", "wav", "flac", "aac", "ogg"].includes(ext)) {
-        return "🎵";
+        return `<svg class="file-svg audio-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`;
     }
     if (["pdf"].includes(ext)) {
-        return "📕";
+        return `<svg class="file-svg doc-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`;
     }
     if (["zip", "tar", "gz", "7z", "rar"].includes(ext)) {
-        return "📦";
+        return `<svg class="file-svg archive-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>`;
     }
-    if (["js", "json", "html", "css", "py", "sh", "c", "cpp", "java"].includes(ext)) {
-        return "💻";
+    if (["js", "json", "html", "css", "py", "sh", "c", "cpp", "java", "ts"].includes(ext)) {
+        return `<svg class="file-svg code-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`;
     }
-    if (["txt", "md", "doc", "docx"].includes(ext)) {
-        return "📝";
-    }
-    return "📄";
+    return `<svg class="file-svg file-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>`;
 }
 
 function formatDate(dateString) {
@@ -477,7 +474,7 @@ function updateBreadcrumbs(subpath) {
 
     const parts = subpath ? subpath.split("/").filter(Boolean) : [];
     
-    let html = `<span class="breadcrumb-item ${parts.length === 0 ? 'active' : ''}" onclick="navigateToPath('')">🏠 Root</span>`;
+    let html = `<span class="breadcrumb-item ${parts.length === 0 ? 'active' : ''}" onclick="navigateToPath('')">Root</span>`;
 
     let accumulatedPath = "";
     parts.forEach((part, index) => {
@@ -486,10 +483,10 @@ function updateBreadcrumbs(subpath) {
         
         html += ` <span class="breadcrumb-separator">/</span> `;
         if (isLast) {
-            html += `<span class="breadcrumb-item active">📁 ${escapeHtml(part)}</span>`;
+            html += `<span class="breadcrumb-item active">${escapeHtml(part)}</span>`;
         } else {
             const pathArg = escapeJsString(accumulatedPath);
-            html += `<span class="breadcrumb-item" onclick="navigateToPath('${pathArg}')">📁 ${escapeHtml(part)}</span>`;
+            html += `<span class="breadcrumb-item" onclick="navigateToPath('${pathArg}')">${escapeHtml(part)}</span>`;
         }
     });
 
@@ -548,9 +545,14 @@ async function loadFileList(subpath = currentSubpath) {
             return;
         }
 
+        const folderSvg = `<svg class="file-svg folder-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`;
+        const openSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+        const downloadSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
+        const deleteSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+
         tableBody.innerHTML = items.map(item => {
             const isDir = item.isDirectory;
-            const icon = isDir ? "📁" : getFileIcon(item.name);
+            const icon = isDir ? folderSvg : getFileIcon(item.name);
             const formattedSize = isDir ? "-" : formatBytes(item.size);
             const formattedTime = formatDate(item.mtime);
             const escapedName = escapeJsString(item.name);
@@ -569,10 +571,10 @@ async function loadFileList(subpath = currentSubpath) {
                         <td>${formattedTime}</td>
                         <td style="text-align: right;">
                             <button class="btn-action btn-open" onclick="openFolder('${escapedName}')">
-                                📂 Buka
+                                ${openSvg} <span>Buka</span>
                             </button>
                             <button class="btn-action btn-delete" onclick="deleteItem('${escapedName}', true)">
-                                🗑 Hapus
+                                ${deleteSvg} <span>Hapus</span>
                             </button>
                         </td>
                     </tr>
@@ -593,15 +595,16 @@ async function loadFileList(subpath = currentSubpath) {
                     <td>${formattedTime}</td>
                     <td style="text-align: right;">
                         <a href="${downloadUrl}" class="btn-action btn-download" download>
-                            ⬇ Download
+                            ${downloadSvg} <span>Download</span>
                         </a>
                         <button class="btn-action btn-delete" onclick="deleteItem('${escapedName}', false)">
-                            🗑 Delete
+                            ${deleteSvg} <span>Hapus</span>
                         </button>
                     </td>
                 </tr>
             `;
         }).join("");
+.join("");
 
     } catch (error) {
         console.error("Failed to load file list:", error);
@@ -858,12 +861,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function applyTheme(theme) {
     const themeBtn = document.getElementById("themeToggleBtn");
-    if (theme === "dark") {
+    const themeText = document.getElementById("themeToggleText");
+    const isDark = theme === "dark";
+    
+    if (isDark) {
         document.body.setAttribute("data-theme", "dark");
-        if (themeBtn) themeBtn.innerHTML = "☀️ Light Mode";
+        if (themeText) themeText.textContent = "Light Mode";
+        if (themeBtn) {
+            const iconEl = themeBtn.querySelector(".theme-icon");
+            if (iconEl) {
+                iconEl.innerHTML = `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
+            }
+        }
     } else {
         document.body.removeAttribute("data-theme");
-        if (themeBtn) themeBtn.innerHTML = "🌙 Dark Mode";
+        if (themeText) themeText.textContent = "Dark Mode";
+        if (themeBtn) {
+            const iconEl = themeBtn.querySelector(".theme-icon");
+            if (iconEl) {
+                iconEl.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
+            }
+        }
     }
     localStorage.setItem("sts_theme", theme);
 }

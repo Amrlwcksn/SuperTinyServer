@@ -47,6 +47,9 @@ function getUploadDir() {
 
 function resolveSubpath(subpath = "") {
     const baseDir = getUploadDir();
+    if (!subpath || typeof subpath !== "string") {
+        return baseDir;
+    }
     const safeSubpath = path.normalize(subpath).replace(/^(\.\.[\/\\])+/, "");
     const targetDir = path.resolve(baseDir, safeSubpath);
 
@@ -72,18 +75,37 @@ const storage = multer.diskStorage({
         cb(null, targetDir);
     },
     filename: (req, file, cb) => {
-        const originalName = file.originalname;
+        const originalName = file.originalname || "file";
         const ext = path.extname(originalName);
         const nameWithoutExt = path.basename(originalName, ext);
-        const sanitizedBase = nameWithoutExt.replace(/[^a-zA-Z0-9._-]/g, "_");
-        const finalName = `${sanitizedBase}${ext}`;
-        cb(null, finalName || `file_${Date.now()}${ext}`);
+        const sanitizedBase = nameWithoutExt.replace(/[^a-zA-Z0-9._\s-]/g, "_").trim();
+        const finalName = `${sanitizedBase || "file"}${ext}`;
+        cb(null, finalName);
     }
 });
 
 const upload = multer({
     storage,
     limits: { fileSize: 1024 * 1024 * 1024 * 5 } // 5GB max limit
+});
+
+// POST upload files (batch multi-file with clean error callback)
+app.post("/api/files/upload", (req, res) => {
+    upload.array("files")(req, res, (err) => {
+        if (err) {
+            return res.status(400).json({ error: err.message || "Gagal mengunggah file" });
+        }
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ error: "Tidak ada file yang diunggah" });
+        }
+
+        const uploadedFiles = req.files.map(f => f.filename);
+        res.json({
+            success: true,
+            message: `${req.files.length} file berhasil diunggah`,
+            files: uploadedFiles
+        });
+    });
 });
 
 
@@ -128,8 +150,12 @@ function getStorageInfo() {
 
     try {
 
+        const targetPath = fs.existsSync("/data/data/com.termux/files/home")
+            ? "/data/data/com.termux/files/home"
+            : ".";
+
         const output = execSync(
-            "df -k /data/data/com.termux/files/home | tail -1"
+            `df -k "${targetPath}" | tail -1`
         )
         .toString()
         .trim();
@@ -170,6 +196,7 @@ function getStorageInfo() {
     }
 
 }
+
 
 
 /*
