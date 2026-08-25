@@ -367,6 +367,8 @@ menuItems.forEach(item => {
             } else if (page === "filedrop") {
                 pageTitle = "File Sharing (File Drop)";
                 loadFileList();
+            } else if (page === "credits") {
+                pageTitle = "Credits & About";
             }
 
             document.getElementById("pageTitle").textContent = pageTitle;
@@ -375,6 +377,7 @@ menuItems.forEach(item => {
     );
 
 });
+
 
 
 /*
@@ -847,7 +850,37 @@ document.addEventListener("DOMContentLoaded", () => {
             loadFileList(currentSubpath);
         });
     }
-});
+/*
+|--------------------------------------------------------------------------
+| THEME TOGGLE (LIGHT MODE DEFAULT & DARK MODE)
+|--------------------------------------------------------------------------
+*/
+
+function applyTheme(theme) {
+    const themeBtn = document.getElementById("themeToggleBtn");
+    if (theme === "dark") {
+        document.body.setAttribute("data-theme", "dark");
+        if (themeBtn) themeBtn.innerHTML = "☀️ Light Mode";
+    } else {
+        document.body.removeAttribute("data-theme");
+        if (themeBtn) themeBtn.innerHTML = "🌙 Dark Mode";
+    }
+    localStorage.setItem("sts_theme", theme);
+}
+
+function initTheme() {
+    const savedTheme = localStorage.getItem("sts_theme") || "light";
+    applyTheme(savedTheme);
+
+    const themeBtn = document.getElementById("themeToggleBtn");
+    if (themeBtn) {
+        themeBtn.addEventListener("click", () => {
+            const currentTheme = document.body.getAttribute("data-theme") === "dark" ? "dark" : "light";
+            const nextTheme = currentTheme === "dark" ? "light" : "dark";
+            applyTheme(nextTheme);
+        });
+    }
+}
 
 
 /*
@@ -856,34 +889,7 @@ document.addEventListener("DOMContentLoaded", () => {
 |--------------------------------------------------------------------------
 */
 
-loadServerInfo();
-loadSystemStats();
-
-
-/*
-|--------------------------------------------------------------------------
-| AUTO REFRESH
-|--------------------------------------------------------------------------
-*/
-
-setInterval(
-    loadSystemStats,
-    3000
-);
-
-setInterval(
-    loadServerInfo,
-    10000
-);
-
-
-
-/*
-|--------------------------------------------------------------------------
-| INITIAL LOAD
-|--------------------------------------------------------------------------
-*/
-
+initTheme();
 loadServerInfo();
 loadSystemStats();
 

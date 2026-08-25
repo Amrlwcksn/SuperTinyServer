@@ -12,6 +12,8 @@
 
     <title>SuperTinyServer</title>
 
+    <link rel="icon" type="image/png" href="semut.png">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -43,12 +45,9 @@
 
         <div class="logo">
 
-            <div class="logo-icon">
-                S
-            </div>
+            <img src="semut.png" alt="SuperTinyServer Semut Icon" class="logo-img">
 
             <div>
-
 
                 <strong>
                     SuperTinyServer
@@ -127,6 +126,18 @@
 
             </button>
 
+
+            <button
+                class="menu-item"
+                data-page="credits"
+            >
+
+                <span>ℹ️</span>
+
+                Credits & About
+
+            </button>
+
         </nav>
 
 
@@ -175,11 +186,19 @@
             </div>
 
 
-            <div class="top-status">
+            <div class="topbar-actions">
 
-                <span class="status-dot"></span>
+                <button class="theme-toggle-btn" id="themeToggleBtn" type="button" title="Ganti Tema Light / Dark">
+                    🌙 Dark Mode
+                </button>
 
-                ONLINE
+                <div class="top-status">
+
+                    <span class="status-dot"></span>
+
+                    ONLINE
+
+                </div>
 
             </div>
 
@@ -815,6 +834,96 @@
 
 
 
+            <!-- =====================
+                 CREDITS PAGE
+            ====================== -->
+
+            <section
+                class="page"
+                id="credits-page"
+            >
+
+                <div class="section-title">
+
+                    <div>
+
+                        <h3>
+                            Credits & About
+                        </h3>
+
+                        <p>
+                            Informasi proyek dan pengembang SuperTinyServer
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="panel credits-panel">
+
+                    <div class="credits-header">
+
+                        <img
+                            src="STSLogo.png"
+                            alt="SuperTinyServer Logo"
+                            class="sts-logo"
+                        >
+
+                        <h2>SuperTinyServer</h2>
+
+                        <span class="version-badge">
+                            v0.1.0
+                        </span>
+
+                    </div>
+
+
+                    <div class="credits-body">
+
+                        <p class="project-desc">
+                            <strong>SuperTinyServer (STS)</strong> adalah mini server berbasis Android dan Termux yang dirancang untuk mengubah perangkat Android tablet/smartphone menjadi server portable ringan, hemat daya, dan mudah dinavigasi secara lokal.
+                        </p>
+
+                        <div class="credits-box">
+
+                            <h4>👨‍💻 Pengembang & Kontributor</h4>
+
+                            <p>
+                                Dikembangkan sebagai solusi praktis untuk memantau performa tablet, melihat IP server secara otomatis, dan berbagi file antar perangkat lokal (File Drop) melalui antarmuka web modern & responsif.
+                            </p>
+
+                        </div>
+
+                        <div class="credits-box">
+
+                            <h4>⚙️ Teknologi Utama</h4>
+
+                            <div class="tech-tags">
+
+                                <span class="tech-tag">Android</span>
+
+                                <span class="tech-tag">Termux</span>
+
+                                <span class="tech-tag">Node.js</span>
+
+                                <span class="tech-tag">Express.js</span>
+
+                                <span class="tech-tag">OpenSSH</span>
+
+                                <span class="tech-tag">HTML5 / CSS3 / JS</span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
         </div>
 
     </main>
@@ -827,3 +936,4 @@
 </body>
 
 </html>
+
