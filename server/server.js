@@ -6,6 +6,7 @@ const multer = require("multer");
 const { execSync, spawn } = require("child_process");
 const http = require("http");
 const { WebSocketServer } = require("ws");
+const pty = require("node-pty");
 
 const app = express();
 const server = http.createServer(app);
@@ -485,7 +486,7 @@ app.delete("/api/files", (req, res) => {
 
 /*
 |--------------------------------------------------------------------------
-| WEB TERMINAL WEBSOCKET SUITE
+| WEB TERMINAL WEBSOCKET SUITE (POWERED BY NODE-PTY)
 |--------------------------------------------------------------------------
 */
 
@@ -499,7 +500,7 @@ wss.on("connection", (ws) => {
         } else if (fs.existsSync("/data/data/com.termux/files/usr/bin/bash")) {
             shellBin = "/data/data/com.termux/files/usr/bin/bash";
         } else {
-            shellBin = "/bin/sh";
+            shellBin = os.platform() === "win32" ? "cmd.exe" : "/bin/sh";
         }
     }
 
@@ -507,51 +508,40 @@ wss.on("connection", (ws) => {
         ? "/data/data/com.termux/files/home"
         : os.homedir();
 
-    const env = {
-        ...process.env,
+    const env = Object.assign({}, process.env, {
         TERM: "xterm-256color",
         COLORTERM: "truecolor",
         HOME: homeDir
-    };
-
-    let shellProc;
-
-    try {
-        if (os.platform() !== "win32" && (fs.existsSync("/usr/bin/script") || fs.existsSync("/data/data/com.termux/files/usr/bin/script"))) {
-            const scriptBin = fs.existsSync("/usr/bin/script") ? "/usr/bin/script" : "/data/data/com.termux/files/usr/bin/script";
-            shellProc = spawn(scriptBin, ["-q", "-c", shellBin, "/dev/null"], {
-                cwd: homeDir,
-                env
-            });
-        } else {
-            shellProc = spawn(shellBin, ["-i"], {
-                cwd: homeDir,
-                env
-            });
-        }
-    } catch (err) {
-        shellProc = spawn(shellBin, [], {
-            cwd: homeDir,
-            env
-        });
-    }
-
-    const sendToClient = (data) => {
-        if (ws.readyState === ws.OPEN) {
-            ws.send(data.toString());
-        }
-    };
-
-    if (shellProc.stdout) shellProc.stdout.on("data", sendToClient);
-    if (shellProc.stderr) shellProc.stderr.on("data", sendToClient);
-
-    shellProc.on("error", (err) => {
-        sendToClient(`\r\n[Terminal Error: ${err.message}]\r\n`);
     });
 
-    shellProc.on("close", (code) => {
-        sendToClient(`\r\n[Process exited with code ${code}]\r\n`);
+    let ptyProcess;
+
+    try {
+        ptyProcess = pty.spawn(shellBin, [], {
+            name: "xterm-256color",
+            cols: 80,
+            rows: 24,
+            cwd: homeDir,
+            env: env
+        });
+    } catch (err) {
+        console.error("Gagal melakukan spawn PTY:", err);
         if (ws.readyState === ws.OPEN) {
+            ws.send(`\r\n[Terminal Error: ${err.message}]\r\n`);
+            ws.close();
+        }
+        return;
+    }
+
+    ptyProcess.onData((data) => {
+        if (ws.readyState === ws.OPEN) {
+            ws.send(data);
+        }
+    });
+
+    ptyProcess.onExit(({ exitCode, signal }) => {
+        if (ws.readyState === ws.OPEN) {
+            ws.send(`\r\n\x1b[31m[Process exited with code ${exitCode}]\x1b[0m\r\n`);
             ws.close();
         }
     });
@@ -562,29 +552,29 @@ wss.on("connection", (ws) => {
             if (strMsg.startsWith("{") && strMsg.endsWith("}")) {
                 const parsed = JSON.parse(strMsg);
                 if (parsed.type === "resize" && parsed.cols && parsed.rows) {
-                    if (shellProc && shellProc.stdin && shellProc.stdin.writable && os.platform() !== "win32") {
+                    if (ptyProcess) {
                         try {
-                            shellProc.stdin.write(`stty cols ${parsed.cols} rows ${parsed.rows}\n`);
+                            ptyProcess.resize(Math.max(10, parsed.cols), Math.max(5, parsed.rows));
                         } catch (e) {}
                     }
                     return;
                 }
             }
 
-            if (shellProc && shellProc.stdin && shellProc.stdin.writable) {
-                shellProc.stdin.write(msg);
+            if (ptyProcess) {
+                ptyProcess.write(msg.toString());
             }
         } catch (e) {
-            if (shellProc && shellProc.stdin && shellProc.stdin.writable) {
-                shellProc.stdin.write(msg);
+            if (ptyProcess) {
+                ptyProcess.write(msg.toString());
             }
         }
     });
 
     ws.on("close", () => {
-        if (shellProc) {
+        if (ptyProcess) {
             try {
-                shellProc.kill("SIGTERM");
+                ptyProcess.kill();
             } catch (e) {}
         }
     });

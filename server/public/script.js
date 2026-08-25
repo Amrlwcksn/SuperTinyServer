@@ -789,8 +789,11 @@ function initTerminal() {
 
     term = new Terminal({
         cursorBlink: true,
+        cursorStyle: "block",
+        convertEol: true,
+        scrollback: 10000,
         fontSize: termFontSize,
-        fontFamily: '"SF Mono", Monaco, Consolas, "Courier New", monospace',
+        fontFamily: '"JetBrains Mono", "Fira Code", "SF Mono", Monaco, Consolas, "Courier New", monospace',
         theme: {
             background: "#0d1117",
             foreground: "#c9d1d9",
