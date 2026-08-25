@@ -1675,28 +1675,12 @@ body {
     user-select: none;
 }
 
-.terminal-dots {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.terminal-dots .dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    display: inline-block;
-}
-
-.terminal-dots .dot.red { background: #ff5f56; }
-.terminal-dots .dot.yellow { background: #ffbd2e; }
-.terminal-dots .dot.green { background: #27c93f; }
-
 .terminal-title {
     font-family: "SF Mono", Monaco, Consolas, monospace;
-    font-size: 12px;
+    font-size: 11px;
+    letter-spacing: 0.8px;
     color: #8b949e;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .terminal-font-controls {
