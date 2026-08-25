@@ -1,435 +1,220 @@
-const menuItems =
-    document.querySelectorAll(".menu-item");
-
-const pages =
-    document.querySelectorAll(".page");
-
+const menuItems = document.querySelectorAll(".menu-item");
+const pages = document.querySelectorAll(".page");
 
 /*
 |--------------------------------------------------------------------------
 | FORMAT BYTES
 |--------------------------------------------------------------------------
 */
-
 function formatBytes(bytes) {
-
-    if (!bytes) {
-        return "0 MB";
+    if (!bytes || isNaN(bytes) || bytes <= 0) {
+        return "0 B";
     }
 
-    const units = [
-        "B",
-        "KB",
-        "MB",
-        "GB",
-        "TB"
-    ];
-
-    const index =
-        Math.floor(
-            Math.log(bytes) /
-            Math.log(1024)
-        );
-
-    const value =
-        bytes /
-        Math.pow(1024, index);
-
-    return (
-        value.toFixed(1) +
-        " " +
-        units[index]
+    const units = ["B", "KB", "MB", "GB", "TB"];
+    const index = Math.min(
+        Math.floor(Math.log(bytes) / Math.log(1024)),
+        units.length - 1
     );
 
+    const value = bytes / Math.pow(1024, index);
+    return `${value.toFixed(1)} ${units[index]}`;
 }
-
 
 /*
 |--------------------------------------------------------------------------
 | FORMAT UPTIME
 |--------------------------------------------------------------------------
 */
-
 function formatUptime(seconds) {
+    seconds = Math.floor(seconds || 0);
 
-    seconds =
-        Math.floor(seconds);
-
-    const days =
-        Math.floor(seconds / 86400);
-
+    const days = Math.floor(seconds / 86400);
     seconds %= 86400;
 
-    const hours =
-        Math.floor(seconds / 3600);
-
+    const hours = Math.floor(seconds / 3600);
     seconds %= 3600;
 
-    const minutes =
-        Math.floor(seconds / 60);
-
+    const minutes = Math.floor(seconds / 60);
 
     let result = "";
-
     if (days > 0) {
         result += days + "d ";
     }
 
-    result +=
-        String(hours)
-            .padStart(2, "0")
-        +
-        "h ";
-
-    result +=
-        String(minutes)
-            .padStart(2, "0")
-        +
-        "m";
+    result += String(hours).padStart(2, "0") + "h ";
+    result += String(minutes).padStart(2, "0") + "m";
 
     return result;
-
 }
-
 
 /*
 |--------------------------------------------------------------------------
 | LOAD SERVER INFO
 |--------------------------------------------------------------------------
 */
-
 async function loadServerInfo() {
-
     try {
+        const response = await fetch("/api/server-info");
+        if (!response.ok) return;
 
-        const response =
-            await fetch(
-                "/api/server-info"
-            );
+        const data = await response.json();
 
-        const data =
-            await response.json();
+        const hostnameEl = document.getElementById("hostname");
+        if (hostnameEl) hostnameEl.textContent = data.hostname || "-";
 
+        const platformEl = document.getElementById("platform");
+        if (platformEl) platformEl.textContent = data.platform || "-";
 
-        document.getElementById(
-            "hostname"
-        ).textContent =
-            data.hostname;
+        const nodeVerEl = document.getElementById("nodeVersion");
+        if (nodeVerEl) nodeVerEl.textContent = data.nodeVersion || "-";
 
+        const uptimeEl = document.getElementById("uptime");
+        if (uptimeEl) uptimeEl.textContent = formatUptime(data.uptime);
 
-        document.getElementById(
-            "platform"
-        ).textContent =
-            data.platform;
+        const usernameEl = document.getElementById("username");
+        if (usernameEl) usernameEl.textContent = data.username || "-";
 
+        const ipEl = document.getElementById("ip");
+        if (ipEl) ipEl.textContent = data.ip || "-";
 
-        document.getElementById(
-            "nodeVersion"
-        ).textContent =
-            data.nodeVersion;
+        const portEl = document.getElementById("port");
+        if (portEl) portEl.textContent = data.port || "8022";
 
-
-        document.getElementById(
-            "uptime"
-        ).textContent =
-            formatUptime(
-                data.uptime
-            );
-
-
-        document.getElementById(
-            "username"
-        ).textContent =
-            data.username;
-
-
-        document.getElementById(
-            "ip"
-        ).textContent =
-            data.ip;
-
-
-        document.getElementById(
-            "port"
-        ).textContent =
-            data.port;
-
-
-        document.getElementById(
-            "sshCommand"
-        ).textContent =
-            data.sshCommand;
-
-
+        const sshCmdEl = document.getElementById("sshCommand");
+        if (sshCmdEl) sshCmdEl.textContent = data.sshCommand || "-";
     } catch (error) {
-
-        console.error(
-            "Failed to load server info",
-            error
-        );
-
+        console.error("Failed to load server info", error);
     }
-
 }
-
 
 /*
 |--------------------------------------------------------------------------
 | LOAD SYSTEM STATS
 |--------------------------------------------------------------------------
 */
-
 async function loadSystemStats() {
-
     try {
+        const response = await fetch("/api/system-stats");
+        if (!response.ok) return;
 
-        const response =
-            await fetch(
-                "/api/system-stats"
-            );
+        const data = await response.json();
 
-        const data =
-            await response.json();
-
-
-        /*
-        | CPU
-        */
-
-        const cpuLoad =
-            data.cpu.load1;
-
-        const cpuPercent =
-            Math.min(
-                Math.round(
-                    (cpuLoad /
-                    data.cpu.cores)
-                    * 100
-                ),
-                100
-            );
-
-
-        document.getElementById(
-            "cpuCores"
-        ).textContent =
-            data.cpu.cores +
-            " CORES";
-
-
-        document.getElementById(
-            "cpuLoad"
-        ).textContent =
-            cpuLoad.toFixed(2);
-
-
-        document.getElementById(
-            "cpuBar"
-        ).style.width =
-            cpuPercent + "%";
-
-
-
-        /*
-        | MEMORY
-        */
-
-        document.getElementById(
-            "memoryPercent"
-        ).textContent =
-            data.memory.usage + "%";
-
-
-        document.getElementById(
-            "memoryUsed"
-        ).textContent =
-            formatBytes(
-                data.memory.used
-            );
-
-
-        document.getElementById(
-            "memoryTotal"
-        ).textContent =
-            formatBytes(
-                data.memory.total
-            ) + " total";
-
-
-        document.getElementById(
-            "memoryBar"
-        ).style.width =
-            data.memory.usage + "%";
-
-
-
-        /*
-        | STORAGE
-        */
-
-        document.getElementById(
-            "storagePercent"
-        ).textContent =
-            data.storage.usage + "%";
-
-
-        document.getElementById(
-            "storageUsed"
-        ).textContent =
-            formatBytes(
-                data.storage.used
-            );
-
-
-        document.getElementById(
-            "storageTotal"
-        ).textContent =
-            formatBytes(
-                data.storage.total
-            ) + " total";
-
-
-        document.getElementById(
-            "storageBar"
-        ).style.width =
-            data.storage.usage + "%";
-
-
-    } catch (error) {
-
-        console.error(
-            "Failed to load system stats",
-            error
+        /* CPU */
+        const cpuLoad = data.cpu.load1;
+        const cpuPercent = Math.min(
+            Math.round((cpuLoad / (data.cpu.cores || 1)) * 100),
+            100
         );
 
+        const cpuCoresEl = document.getElementById("cpuCores");
+        if (cpuCoresEl) cpuCoresEl.textContent = (data.cpu.cores || "-") + " CORES";
+
+        const cpuLoadEl = document.getElementById("cpuLoad");
+        if (cpuLoadEl) cpuLoadEl.textContent = cpuLoad.toFixed(2);
+
+        const cpuBarEl = document.getElementById("cpuBar");
+        if (cpuBarEl) cpuBarEl.style.width = cpuPercent + "%";
+
+        /* MEMORY */
+        const memPercentEl = document.getElementById("memoryPercent");
+        if (memPercentEl) memPercentEl.textContent = data.memory.usage + "%";
+
+        const memUsedEl = document.getElementById("memoryUsed");
+        if (memUsedEl) memUsedEl.textContent = formatBytes(data.memory.used);
+
+        const memTotalEl = document.getElementById("memoryTotal");
+        if (memTotalEl) memTotalEl.textContent = formatBytes(data.memory.total) + " total";
+
+        const memBarEl = document.getElementById("memoryBar");
+        if (memBarEl) memBarEl.style.width = data.memory.usage + "%";
+
+        /* STORAGE */
+        const storagePercentEl = document.getElementById("storagePercent");
+        if (storagePercentEl) storagePercentEl.textContent = data.storage.usage + "%";
+
+        const storageUsedEl = document.getElementById("storageUsed");
+        if (storageUsedEl) storageUsedEl.textContent = formatBytes(data.storage.used);
+
+        const storageTotalEl = document.getElementById("storageTotal");
+        if (storageTotalEl) storageTotalEl.textContent = formatBytes(data.storage.total) + " total";
+
+        const storageBarEl = document.getElementById("storageBar");
+        if (storageBarEl) storageBarEl.style.width = data.storage.usage + "%";
+
+    } catch (error) {
+        console.error("Failed to load system stats", error);
     }
-
 }
-
 
 /*
 |--------------------------------------------------------------------------
 | NAVIGATION
 |--------------------------------------------------------------------------
 */
-
 menuItems.forEach(item => {
-
-    if (
-        item.classList.contains(
-            "disabled"
-        )
-    ) {
+    if (item.classList.contains("disabled")) {
         return;
     }
 
+    item.addEventListener("click", () => {
+        const page = item.dataset.page;
 
-    item.addEventListener(
-        "click",
-        () => {
+        menuItems.forEach(menu => menu.classList.remove("active"));
+        item.classList.add("active");
 
-            const page =
-                item.dataset.page;
+        pages.forEach(pageElement => pageElement.classList.remove("active-page"));
 
-
-            menuItems.forEach(
-                menu =>
-                    menu.classList.remove(
-                        "active"
-                    )
-            );
-
-
-            item.classList.add(
-                "active"
-            );
-
-
-            pages.forEach(
-                pageElement =>
-                    pageElement.classList.remove(
-                        "active-page"
-                    )
-            );
-
-
-            const targetPage = document.getElementById(`${page}-page`);
-            if (targetPage) {
-                targetPage.classList.add("active-page");
-            }
-
-
-            let pageTitle = "Dashboard";
-            if (page === "dashboard") {
-                pageTitle = "Dashboard";
-            } else if (page === "ssh") {
-                pageTitle = "SSH Connection";
-            } else if (page === "filedrop") {
-                pageTitle = "File Sharing (File Drop)";
-                loadFileList();
-            } else if (page === "credits") {
-                pageTitle = "Credits & About";
-            }
-
-            document.getElementById("pageTitle").textContent = pageTitle;
-
+        const targetPage = document.getElementById(`${page}-page`);
+        if (targetPage) {
+            targetPage.classList.add("active-page");
         }
-    );
 
+        let pageTitle = "Dashboard";
+        if (page === "dashboard") {
+            pageTitle = "Dashboard";
+        } else if (page === "ssh") {
+            pageTitle = "SSH Connection";
+        } else if (page === "filedrop") {
+            pageTitle = "File Sharing (File Drop)";
+            loadFileList();
+        } else if (page === "credits") {
+            pageTitle = "Credits & About";
+        }
+
+        const pageTitleEl = document.getElementById("pageTitle");
+        if (pageTitleEl) pageTitleEl.textContent = pageTitle;
+    });
 });
-
-
 
 /*
 |--------------------------------------------------------------------------
 | COPY SSH COMMAND
 |--------------------------------------------------------------------------
 */
-
 const copyBtn = document.getElementById("copyButton");
 if (copyBtn) {
-    copyBtn.addEventListener(
-        "click",
-        async () => {
+    copyBtn.addEventListener("click", async () => {
+        const sshCommandEl = document.getElementById("sshCommand");
+        const command = sshCommandEl ? sshCommandEl.textContent : "";
 
-            const command =
-                document.getElementById(
-                    "sshCommand"
-                ).textContent;
-
-
-            await navigator.clipboard.writeText(
-                command
-            );
-
-
-            const button =
-                document.getElementById(
-                    "copyButton"
-                );
-
-            button.textContent =
-                "COPIED!";
-
-
+        try {
+            await navigator.clipboard.writeText(command);
+            copyBtn.textContent = "COPIED!";
             setTimeout(() => {
-
-                button.textContent =
-                    "COPY COMMAND";
-
+                copyBtn.textContent = "COPY COMMAND";
             }, 2000);
-
+        } catch (err) {
+            console.error("Failed to copy text: ", err);
         }
-    );
+    });
 }
-
 
 /*
 |--------------------------------------------------------------------------
-| FILE DROP / FILE SHARING LOGIC WITH SUBFOLDER SUPPORT
+| FILE DROP LOGIC
 |--------------------------------------------------------------------------
 */
-
 let currentSubpath = "";
 
 function getFileIcon(filename) {
@@ -466,6 +251,25 @@ function formatDate(dateString) {
         hour: "2-digit",
         minute: "2-digit"
     });
+}
+
+function escapeHtml(str) {
+    if (!str) return "";
+    return String(str).replace(/[&<>"']/g, match => {
+        const escapeMap = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        };
+        return escapeMap[match];
+    });
+}
+
+function escapeJsString(str) {
+    if (!str) return "";
+    return String(str).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
 
 function updateBreadcrumbs(subpath) {
@@ -510,6 +314,8 @@ async function loadFileList(subpath = currentSubpath) {
     try {
         const queryPath = encodeURIComponent(subpath || "");
         const response = await fetch(`/api/files?path=${queryPath}`);
+        if (!response.ok) throw new Error("Gagal mengambil data file");
+        
         const data = await response.json();
 
         if (data.baseDir) {
@@ -604,7 +410,6 @@ async function loadFileList(subpath = currentSubpath) {
                 </tr>
             `;
         }).join("");
-.join("");
 
     } catch (error) {
         console.error("Failed to load file list:", error);
@@ -616,23 +421,6 @@ async function loadFileList(subpath = currentSubpath) {
             </tr>
         `;
     }
-}
-
-function escapeHtml(str) {
-    return str.replace(/[&<>"']/g, match => {
-        const escapeMap = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#39;'
-        };
-        return escapeMap[match];
-    });
-}
-
-function escapeJsString(str) {
-    return str.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
 
 async function createFolder() {
@@ -755,13 +543,17 @@ function uploadFiles(files) {
     };
 
     xhr.onerror = () => {
-        if (uploadStatusText) uploadStatusText.textContent = "❌ Terjadi kesalahan jaringan saat upload.";
+        if (uploadStatusText) uploadStatusText.textContent = "Terjadi kesalahan jaringan saat upload.";
     };
 
     xhr.send(formData);
 }
 
-// Event Listeners for File Drop
+/*
+|--------------------------------------------------------------------------
+| DOM LISTENERS FOR FILE DROP
+|--------------------------------------------------------------------------
+*/
 document.addEventListener("DOMContentLoaded", () => {
     const dropzone = document.getElementById("dropzone");
     const fileInput = document.getElementById("fileInput");
@@ -806,7 +598,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (dropzone && fileInput) {
-        dropzone.addEventListener("click", (e) => {
+        dropzone.addEventListener("click", () => {
             fileInput.click();
         });
 
@@ -853,12 +645,13 @@ document.addEventListener("DOMContentLoaded", () => {
             loadFileList(currentSubpath);
         });
     }
+});
+
 /*
 |--------------------------------------------------------------------------
 | THEME TOGGLE (LIGHT MODE DEFAULT & DARK MODE)
 |--------------------------------------------------------------------------
 */
-
 function applyTheme(theme) {
     const themeBtn = document.getElementById("themeToggleBtn");
     const themeText = document.getElementById("themeToggleText");
@@ -900,31 +693,14 @@ function initTheme() {
     }
 }
 
-
 /*
 |--------------------------------------------------------------------------
-| INITIAL LOAD
+| INITIAL LOAD & AUTO REFRESH
 |--------------------------------------------------------------------------
 */
-
 initTheme();
 loadServerInfo();
 loadSystemStats();
 
-
-/*
-|--------------------------------------------------------------------------
-| AUTO REFRESH
-|--------------------------------------------------------------------------
-*/
-
-setInterval(
-    loadSystemStats,
-    3000
-);
-
-setInterval(
-    loadServerInfo,
-    10000
-);
-
+setInterval(loadSystemStats, 3000);
+setInterval(loadServerInfo, 10000);
