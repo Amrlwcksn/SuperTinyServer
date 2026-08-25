@@ -365,6 +365,7 @@ async function loadFileList(subpath = currentSubpath) {
         const openSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
         const downloadSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
         const deleteSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+        const previewSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
 
         tableBody.innerHTML = items.map(item => {
             const isDir = item.isDirectory;
@@ -404,12 +405,15 @@ async function loadFileList(subpath = currentSubpath) {
                     <td>
                         <div class="file-name-cell">
                             <span class="file-icon">${icon}</span>
-                            <span>${htmlName}</span>
+                            <span class="file-link" onclick="previewFile('${escapedName}', ${item.size})">${htmlName}</span>
                         </div>
                     </td>
                     <td>${formattedSize}</td>
                     <td>${formattedTime}</td>
                     <td style="text-align: right;">
+                        <button class="btn-action btn-preview" onclick="previewFile('${escapedName}', ${item.size})">
+                            ${previewSvg} <span>Preview</span>
+                        </button>
                         <a href="${downloadUrl}" class="btn-action btn-download" download>
                             ${downloadSvg} <span>Download</span>
                         </a>
@@ -903,4 +907,131 @@ loadSystemStats();
 
 setInterval(loadSystemStats, 3000);
 setInterval(loadServerInfo, 10000);
+
+
+/*
+|--------------------------------------------------------------------------
+| FILE PREVIEW MODAL LOGIC
+|--------------------------------------------------------------------------
+*/
+let currentPreviewText = "";
+
+function closePreviewModal() {
+    const modal = document.getElementById("filePreviewModal");
+    const container = document.getElementById("modalBodyContainer");
+    if (modal) modal.style.display = "none";
+    if (container) container.innerHTML = "";
+    currentPreviewText = "";
+}
+
+async function previewFile(filename, size = 0) {
+    const modal = document.getElementById("filePreviewModal");
+    const container = document.getElementById("modalBodyContainer");
+    const nameEl = document.getElementById("modalFileName");
+    const sizeEl = document.getElementById("modalFileSize");
+    const iconEl = document.getElementById("modalFileIcon");
+    const downloadBtn = document.getElementById("modalDownloadBtn");
+    const openTabBtn = document.getElementById("modalOpenTabBtn");
+    const copyBtn = document.getElementById("modalCopyBtn");
+
+    if (!modal || !container) return;
+
+    const ext = filename.split('.').pop().toLowerCase();
+    const encodedPath = encodeURIComponent(currentSubpath);
+    const encodedFile = encodeURIComponent(filename);
+
+    const viewUrl = `/api/files/view?path=${encodedPath}&filename=${encodedFile}`;
+    const downloadUrl = `/api/files/download?path=${encodedPath}&filename=${encodedFile}`;
+
+    if (nameEl) nameEl.textContent = filename;
+    if (sizeEl) sizeEl.textContent = formatBytes(size);
+    if (iconEl) iconEl.innerHTML = getFileIcon(filename);
+    if (downloadBtn) downloadBtn.href = downloadUrl;
+    if (openTabBtn) openTabBtn.href = viewUrl;
+
+    if (copyBtn) copyBtn.style.display = "none";
+    container.innerHTML = '<div class="modal-loading">Memuat preview file...</div>';
+    modal.style.display = "flex";
+
+    const imageExts = ["png", "jpg", "jpeg", "gif", "webp", "svg", "ico", "bmp"];
+    const videoExts = ["mp4", "webm", "ogg", "mov", "mkv"];
+    const audioExts = ["mp3", "wav", "ogg", "m4a", "flac", "aac"];
+    const pdfExts = ["pdf"];
+    const textExts = ["txt", "js", "json", "html", "css", "py", "sh", "md", "log", "xml", "yml", "yaml", "c", "cpp", "h", "java", "rs", "go", "php", "ts", "jsx", "tsx", "env", "ini", "conf"];
+
+    if (imageExts.includes(ext)) {
+        container.innerHTML = `<img src="${viewUrl}" class="preview-image" alt="${escapeHtml(filename)}" />`;
+    } else if (videoExts.includes(ext)) {
+        container.innerHTML = `<video src="${viewUrl}" controls class="preview-media-player" autoplay></video>`;
+    } else if (audioExts.includes(ext)) {
+        container.innerHTML = `<audio src="${viewUrl}" controls class="preview-media-player" autoplay></audio>`;
+    } else if (pdfExts.includes(ext)) {
+        container.innerHTML = `<iframe src="${viewUrl}" class="preview-iframe"></iframe>`;
+    } else if (textExts.includes(ext)) {
+        try {
+            const resp = await fetch(viewUrl);
+            if (!resp.ok) throw new Error("Gagal membaca isi file teks");
+            const textContent = await resp.text();
+            currentPreviewText = textContent;
+
+            if (copyBtn) copyBtn.style.display = "inline-flex";
+
+            container.innerHTML = `
+                <div class="preview-code-container">
+                    <pre><code>${escapeHtml(textContent)}</code></pre>
+                </div>
+            `;
+        } catch (e) {
+            container.innerHTML = `<div class="modal-loading" style="color: var(--mac-red);">Gagal memuat teks: ${escapeHtml(e.message)}</div>`;
+        }
+    } else {
+        container.innerHTML = `
+            <div class="preview-fallback-card">
+                <div class="preview-fallback-icon">${getFileIcon(filename)}</div>
+                <h4>Format file .${escapeHtml(ext)} tidak dapat di-preview secara langsung</h4>
+                <p>Ukuran file: ${formatBytes(size)}</p>
+                <a href="${downloadUrl}" class="btn-primary" download>Unduh File Ini</a>
+            </div>
+        `;
+    }
+}
+
+// Modal event listeners
+const modalCloseBtn = document.getElementById("modalCloseBtn");
+if (modalCloseBtn) {
+    modalCloseBtn.addEventListener("click", closePreviewModal);
+}
+
+const filePreviewModalEl = document.getElementById("filePreviewModal");
+if (filePreviewModalEl) {
+    filePreviewModalEl.addEventListener("click", (e) => {
+        if (e.target === filePreviewModalEl) {
+            closePreviewModal();
+        }
+    });
+}
+
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+        closePreviewModal();
+    }
+});
+
+const modalCopyBtnEl = document.getElementById("modalCopyBtn");
+if (modalCopyBtnEl) {
+    modalCopyBtnEl.addEventListener("click", async () => {
+        if (!currentPreviewText) return;
+        try {
+            await navigator.clipboard.writeText(currentPreviewText);
+            const span = modalCopyBtnEl.querySelector("span");
+            if (span) {
+                const oldText = span.textContent;
+                span.textContent = "Tersalin!";
+                setTimeout(() => { span.textContent = oldText; }, 2000);
+            }
+        } catch (err) {
+            alert("Gagal menyalin teks");
+        }
+    });
+}
 

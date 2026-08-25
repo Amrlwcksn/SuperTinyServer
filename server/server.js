@@ -453,6 +453,25 @@ app.get("/api/files/download", (req, res) => {
     res.download(filePath, filename);
 });
 
+// GET view/raw file inline for preview
+app.get("/api/files/view", (req, res) => {
+    const reqPath = req.query.path || "";
+    const filename = req.query.filename || "";
+
+    if (!filename) {
+        return res.status(400).send("Nama file tidak ditentukan");
+    }
+
+    const targetDir = resolveSubpath(reqPath);
+    const filePath = path.join(targetDir, path.basename(filename));
+
+    if (!filePath.startsWith(getUploadDir()) || !fs.existsSync(filePath)) {
+        return res.status(404).send("File tidak ditemukan");
+    }
+
+    res.sendFile(filePath);
+});
+
 // DELETE file or folder
 app.delete("/api/files", (req, res) => {
     const reqPath = req.query.path || req.body.path || "";
