@@ -3,9 +3,13 @@ const os = require("os");
 const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
-const { execSync } = require("child_process");
+const { execSync, spawn } = require("child_process");
+const http = require("http");
+const { WebSocketServer } = require("ws");
+const pty = require("node-pty");
 
 const app = express();
+const server = http.createServer(app);
 const PORT = 3000;
 
 app.use(express.json());
@@ -449,6 +453,25 @@ app.get("/api/files/download", (req, res) => {
     res.download(filePath, filename);
 });
 
+// GET view/raw file inline for preview
+app.get("/api/files/view", (req, res) => {
+    const reqPath = req.query.path || "";
+    const filename = req.query.filename || "";
+
+    if (!filename) {
+        return res.status(400).send("Nama file tidak ditentukan");
+    }
+
+    const targetDir = resolveSubpath(reqPath);
+    const filePath = path.join(targetDir, path.basename(filename));
+
+    if (!filePath.startsWith(getUploadDir()) || !fs.existsSync(filePath)) {
+        return res.status(404).send("File tidak ditemukan");
+    }
+
+    res.sendFile(filePath);
+});
+
 // DELETE file or folder
 app.delete("/api/files", (req, res) => {
     const reqPath = req.query.path || req.body.path || "";
@@ -482,11 +505,108 @@ app.delete("/api/files", (req, res) => {
 
 /*
 |--------------------------------------------------------------------------
+| WEB TERMINAL WEBSOCKET SUITE (POWERED BY NODE-PTY)
+|--------------------------------------------------------------------------
+*/
+
+const wss = new WebSocketServer({ server, path: "/api/terminal/ws" });
+
+wss.on("connection", (ws) => {
+    let shellBin = process.env.SHELL;
+    if (!shellBin || !fs.existsSync(shellBin)) {
+        if (fs.existsSync("/bin/bash")) {
+            shellBin = "/bin/bash";
+        } else if (fs.existsSync("/data/data/com.termux/files/usr/bin/bash")) {
+            shellBin = "/data/data/com.termux/files/usr/bin/bash";
+        } else {
+            shellBin = os.platform() === "win32" ? "cmd.exe" : "/bin/sh";
+        }
+    }
+
+    const homeDir = fs.existsSync("/data/data/com.termux/files/home")
+        ? "/data/data/com.termux/files/home"
+        : os.homedir();
+
+    const env = Object.assign({}, process.env, {
+        TERM: "xterm-256color",
+        COLORTERM: "truecolor",
+        HOME: homeDir
+    });
+
+    let ptyProcess;
+
+    try {
+        ptyProcess = pty.spawn(shellBin, [], {
+            name: "xterm-256color",
+            cols: 80,
+            rows: 24,
+            cwd: homeDir,
+            env: env
+        });
+    } catch (err) {
+        console.error("Gagal melakukan spawn PTY:", err);
+        if (ws.readyState === ws.OPEN) {
+            ws.send(`\r\n[Terminal Error: ${err.message}]\r\n`);
+            ws.close();
+        }
+        return;
+    }
+
+    ptyProcess.onData((data) => {
+        if (ws.readyState === ws.OPEN) {
+            ws.send(data);
+        }
+    });
+
+    ptyProcess.onExit(({ exitCode, signal }) => {
+        if (ws.readyState === ws.OPEN) {
+            ws.send(`\r\n\x1b[31m[Process exited with code ${exitCode}]\x1b[0m\r\n`);
+            ws.close();
+        }
+    });
+
+    ws.on("message", (msg) => {
+        try {
+            const strMsg = msg.toString();
+            if (strMsg.startsWith("{") && strMsg.endsWith("}")) {
+                const parsed = JSON.parse(strMsg);
+                if (parsed.type === "resize" && parsed.cols && parsed.rows) {
+                    if (ptyProcess) {
+                        try {
+                            ptyProcess.resize(Math.max(10, parsed.cols), Math.max(5, parsed.rows));
+                        } catch (e) {}
+                    }
+                    return;
+                }
+            }
+
+            if (ptyProcess) {
+                ptyProcess.write(msg.toString());
+            }
+        } catch (e) {
+            if (ptyProcess) {
+                ptyProcess.write(msg.toString());
+            }
+        }
+    });
+
+    ws.on("close", () => {
+        if (ptyProcess) {
+            try {
+                ptyProcess.kill();
+            } catch (e) {}
+        }
+    });
+});
+
+
+/*
+|--------------------------------------------------------------------------
 | START SERVER
 |--------------------------------------------------------------------------
 */
 
-app.listen(
+server.listen(
     PORT,
     "0.0.0.0",
     () => {
@@ -502,5 +622,6 @@ app.listen(
 
     }
 );
+
 
 

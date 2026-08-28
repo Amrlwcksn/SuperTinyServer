@@ -178,6 +178,16 @@ menuItems.forEach(item => {
         } else if (page === "filedrop") {
             pageTitle = "File Sharing (File Drop)";
             loadFileList();
+        } else if (page === "terminal") {
+            pageTitle = "Terminal";
+            if (!terminalInitialized) {
+                initTerminal();
+            } else {
+                setTimeout(() => {
+                    if (fitAddon) fitAddon.fit();
+                    if (term) term.focus();
+                }, 100);
+            }
         } else if (page === "credits") {
             pageTitle = "Credits & About";
         }
@@ -355,6 +365,7 @@ async function loadFileList(subpath = currentSubpath) {
         const openSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
         const downloadSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
         const deleteSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+        const previewSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
 
         tableBody.innerHTML = items.map(item => {
             const isDir = item.isDirectory;
@@ -394,12 +405,15 @@ async function loadFileList(subpath = currentSubpath) {
                     <td>
                         <div class="file-name-cell">
                             <span class="file-icon">${icon}</span>
-                            <span>${htmlName}</span>
+                            <span class="file-link" onclick="previewFile('${escapedName}', ${item.size})">${htmlName}</span>
                         </div>
                     </td>
                     <td>${formattedSize}</td>
                     <td>${formattedTime}</td>
                     <td style="text-align: right;">
+                        <button class="btn-action btn-preview" onclick="previewFile('${escapedName}', ${item.size})">
+                            ${previewSvg} <span>Preview</span>
+                        </button>
                         <a href="${downloadUrl}" class="btn-action btn-download" download>
                             ${downloadSvg} <span>Download</span>
                         </a>
@@ -695,6 +709,195 @@ function initTheme() {
 
 /*
 |--------------------------------------------------------------------------
+| WEB TERMINAL
+|--------------------------------------------------------------------------
+*/
+let terminalInitialized = false;
+let term = null;
+let fitAddon = null;
+let termWs = null;
+let termFontSize = 14;
+
+function setTerminalStatus(online, text) {
+    const dot = document.getElementById("terminalStatusDot");
+    const textEl = document.getElementById("terminalStatusText");
+    if (dot) {
+        dot.className = online ? "status-dot-online" : "status-dot-offline";
+    }
+    if (textEl) {
+        textEl.textContent = text;
+    }
+}
+
+function connectTerminalWebSocket() {
+    if (termWs) {
+        try {
+            termWs.close();
+        } catch (e) {}
+    }
+
+    setTerminalStatus(false, "Connecting...");
+    if (term) {
+        term.write("\r\n\x1b[33mConnecting to terminal server...\x1b[0m\r\n");
+    }
+
+    const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${protocol}//${location.host}/api/terminal/ws`;
+
+    try {
+        termWs = new WebSocket(wsUrl);
+    } catch (e) {
+        setTerminalStatus(false, "Connection Error");
+        if (term) term.write(`\r\n\x1b[31mFailed to connect WebSocket: ${e.message}\x1b[0m\r\n`);
+        return;
+    }
+
+    termWs.onopen = () => {
+        setTerminalStatus(true, "Connected");
+        if (term) {
+            term.write("\x1b[32mConnected to SuperTinyServer Terminal.\x1b[0m\r\n");
+            term.focus();
+            if (fitAddon) fitAddon.fit();
+            if (termWs.readyState === WebSocket.OPEN && term) {
+                termWs.send(JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows }));
+            }
+        }
+    };
+
+    termWs.onmessage = (evt) => {
+        if (term) {
+            term.write(evt.data);
+        }
+    };
+
+    termWs.onerror = () => {
+        setTerminalStatus(false, "Connection Error");
+    };
+
+    termWs.onclose = () => {
+        setTerminalStatus(false, "Disconnected");
+        if (term) {
+            term.write("\r\n\x1b[31m[Terminal Session Disconnected]\x1b[0m\r\n");
+        }
+    };
+}
+
+function initTerminal() {
+    const container = document.getElementById("terminalContainer");
+    if (!container) return;
+
+    if (typeof Terminal === "undefined") {
+        container.innerHTML = '<div style="color: #ff5f56; padding: 20px; font-family: monospace;">Terminal library (xterm.js) failed to load.</div>';
+        return;
+    }
+
+    term = new Terminal({
+        cursorBlink: true,
+        cursorStyle: "block",
+        convertEol: true,
+        scrollback: 10000,
+        fontSize: termFontSize,
+        fontFamily: '"JetBrains Mono", "Fira Code", "SF Mono", Monaco, Consolas, "Courier New", monospace',
+        theme: {
+            background: "#0d1117",
+            foreground: "#c9d1d9",
+            cursor: "#58a6ff",
+            selectionBackground: "rgba(56, 139, 253, 0.4)",
+            black: "#484f58",
+            red: "#ff7b72",
+            green: "#3fb950",
+            yellow: "#d29922",
+            blue: "#58a6ff",
+            magenta: "#bc8cff",
+            cyan: "#39c5cf",
+            white: "#b1bac4",
+            brightBlack: "#6e7681",
+            brightRed: "#ffa198",
+            brightGreen: "#56d364",
+            brightYellow: "#e3b341",
+            brightBlue: "#79c0ff",
+            brightMagenta: "#d2a8ff",
+            brightCyan: "#56d4dd",
+            brightWhite: "#f0f6fc"
+        }
+    });
+
+    let FitClass = null;
+    if (typeof FitAddon !== "undefined") {
+        FitClass = FitAddon.FitAddon || FitAddon;
+    }
+    if (FitClass) {
+        try {
+            fitAddon = new FitClass();
+            term.loadAddon(fitAddon);
+        } catch (e) {
+            console.warn("FitAddon load error:", e);
+        }
+    }
+
+    term.open(container);
+    if (fitAddon) {
+        setTimeout(() => {
+            try { fitAddon.fit(); } catch (e) {}
+        }, 50);
+    }
+
+    term.onData((data) => {
+        if (termWs && termWs.readyState === WebSocket.OPEN) {
+            termWs.send(data);
+        }
+    });
+
+    term.onResize((size) => {
+        if (termWs && termWs.readyState === WebSocket.OPEN) {
+            termWs.send(JSON.stringify({ type: "resize", cols: size.cols, rows: size.rows }));
+        }
+    });
+
+    const clearBtn = document.getElementById("clearTerminalBtn");
+    if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+            if (term) term.clear();
+        });
+    }
+
+    const reconnectBtn = document.getElementById("reconnectTerminalBtn");
+    if (reconnectBtn) {
+        reconnectBtn.addEventListener("click", () => {
+            connectTerminalWebSocket();
+        });
+    }
+
+    const incFontBtn = document.getElementById("termFontIncBtn");
+    if (incFontBtn) {
+        incFontBtn.addEventListener("click", () => {
+            termFontSize = Math.min(24, termFontSize + 1);
+            term.options.fontSize = termFontSize;
+            if (fitAddon) fitAddon.fit();
+        });
+    }
+
+    const decFontBtn = document.getElementById("termFontDecBtn");
+    if (decFontBtn) {
+        decFontBtn.addEventListener("click", () => {
+            termFontSize = Math.max(10, termFontSize - 1);
+            term.options.fontSize = termFontSize;
+            if (fitAddon) fitAddon.fit();
+        });
+    }
+
+    window.addEventListener("resize", () => {
+        if (fitAddon && document.getElementById("terminal-page")?.classList.contains("active-page")) {
+            fitAddon.fit();
+        }
+    });
+
+    terminalInitialized = true;
+    connectTerminalWebSocket();
+}
+
+/*
+|--------------------------------------------------------------------------
 | INITIAL LOAD & AUTO REFRESH
 |--------------------------------------------------------------------------
 */
@@ -704,3 +907,131 @@ loadSystemStats();
 
 setInterval(loadSystemStats, 3000);
 setInterval(loadServerInfo, 10000);
+
+
+/*
+|--------------------------------------------------------------------------
+| FILE PREVIEW MODAL LOGIC
+|--------------------------------------------------------------------------
+*/
+let currentPreviewText = "";
+
+function closePreviewModal() {
+    const modal = document.getElementById("filePreviewModal");
+    const container = document.getElementById("modalBodyContainer");
+    if (modal) modal.style.display = "none";
+    if (container) container.innerHTML = "";
+    currentPreviewText = "";
+}
+
+async function previewFile(filename, size = 0) {
+    const modal = document.getElementById("filePreviewModal");
+    const container = document.getElementById("modalBodyContainer");
+    const nameEl = document.getElementById("modalFileName");
+    const sizeEl = document.getElementById("modalFileSize");
+    const iconEl = document.getElementById("modalFileIcon");
+    const downloadBtn = document.getElementById("modalDownloadBtn");
+    const openTabBtn = document.getElementById("modalOpenTabBtn");
+    const copyBtn = document.getElementById("modalCopyBtn");
+
+    if (!modal || !container) return;
+
+    const ext = filename.split('.').pop().toLowerCase();
+    const encodedPath = encodeURIComponent(currentSubpath);
+    const encodedFile = encodeURIComponent(filename);
+
+    const viewUrl = `/api/files/view?path=${encodedPath}&filename=${encodedFile}`;
+    const downloadUrl = `/api/files/download?path=${encodedPath}&filename=${encodedFile}`;
+
+    if (nameEl) nameEl.textContent = filename;
+    if (sizeEl) sizeEl.textContent = formatBytes(size);
+    if (iconEl) iconEl.innerHTML = getFileIcon(filename);
+    if (downloadBtn) downloadBtn.href = downloadUrl;
+    if (openTabBtn) openTabBtn.href = viewUrl;
+
+    if (copyBtn) copyBtn.style.display = "none";
+    container.innerHTML = '<div class="modal-loading">Memuat preview file...</div>';
+    modal.style.display = "flex";
+
+    const imageExts = ["png", "jpg", "jpeg", "gif", "webp", "svg", "ico", "bmp"];
+    const videoExts = ["mp4", "webm", "ogg", "mov", "mkv"];
+    const audioExts = ["mp3", "wav", "ogg", "m4a", "flac", "aac"];
+    const pdfExts = ["pdf"];
+    const textExts = ["txt", "js", "json", "html", "css", "py", "sh", "md", "log", "xml", "yml", "yaml", "c", "cpp", "h", "java", "rs", "go", "php", "ts", "jsx", "tsx", "env", "ini", "conf"];
+
+    if (imageExts.includes(ext)) {
+        container.innerHTML = `<img src="${viewUrl}" class="preview-image" alt="${escapeHtml(filename)}" />`;
+    } else if (videoExts.includes(ext)) {
+        container.innerHTML = `<video src="${viewUrl}" controls class="preview-media-player" autoplay></video>`;
+    } else if (audioExts.includes(ext)) {
+        container.innerHTML = `<audio src="${viewUrl}" controls class="preview-media-player" autoplay></audio>`;
+    } else if (pdfExts.includes(ext)) {
+        container.innerHTML = `<iframe src="${viewUrl}" class="preview-iframe"></iframe>`;
+    } else if (textExts.includes(ext)) {
+        try {
+            const resp = await fetch(viewUrl);
+            if (!resp.ok) throw new Error("Gagal membaca isi file teks");
+            const textContent = await resp.text();
+            currentPreviewText = textContent;
+
+            if (copyBtn) copyBtn.style.display = "inline-flex";
+
+            container.innerHTML = `
+                <div class="preview-code-container">
+                    <pre><code>${escapeHtml(textContent)}</code></pre>
+                </div>
+            `;
+        } catch (e) {
+            container.innerHTML = `<div class="modal-loading" style="color: var(--mac-red);">Gagal memuat teks: ${escapeHtml(e.message)}</div>`;
+        }
+    } else {
+        container.innerHTML = `
+            <div class="preview-fallback-card">
+                <div class="preview-fallback-icon">${getFileIcon(filename)}</div>
+                <h4>Format file .${escapeHtml(ext)} tidak dapat di-preview secara langsung</h4>
+                <p>Ukuran file: ${formatBytes(size)}</p>
+                <a href="${downloadUrl}" class="btn-primary" download>Unduh File Ini</a>
+            </div>
+        `;
+    }
+}
+
+// Modal event listeners
+const modalCloseBtn = document.getElementById("modalCloseBtn");
+if (modalCloseBtn) {
+    modalCloseBtn.addEventListener("click", closePreviewModal);
+}
+
+const filePreviewModalEl = document.getElementById("filePreviewModal");
+if (filePreviewModalEl) {
+    filePreviewModalEl.addEventListener("click", (e) => {
+        if (e.target === filePreviewModalEl) {
+            closePreviewModal();
+        }
+    });
+}
+
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+        closePreviewModal();
+    }
+});
+
+const modalCopyBtnEl = document.getElementById("modalCopyBtn");
+if (modalCopyBtnEl) {
+    modalCopyBtnEl.addEventListener("click", async () => {
+        if (!currentPreviewText) return;
+        try {
+            await navigator.clipboard.writeText(currentPreviewText);
+            const span = modalCopyBtnEl.querySelector("span");
+            if (span) {
+                const oldText = span.textContent;
+                span.textContent = "Tersalin!";
+                setTimeout(() => { span.textContent = oldText; }, 2000);
+            }
+        } catch (err) {
+            alert("Gagal menyalin teks");
+        }
+    });
+}
+
