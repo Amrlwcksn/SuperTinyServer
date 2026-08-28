@@ -1,6 +1,13 @@
-# SuperTinyServer
+<p align="center">
+  <img src="server/public/STSLogo.png" alt="SuperTinyServer Logo" width="180">
+</p>
 
-SuperTinyServer adalah mini server berbasis Android dan Termux yang memungkinkan perangkat Android digunakan sebagai server ringan dalam jaringan lokal.
+<h1 align="center">SuperTinyServer</h1>
+
+<p align="center">
+  <b>Mini Server Berbasis Android & Termux</b><br>
+  SuperTinyServer adalah mini server yang memungkinkan perangkat Android digunakan sebagai server ringan dalam jaringan lokal.
+</p>
 
 Project ini menyediakan SSH Server dan Web Dashboard yang dapat berjalan secara otomatis ketika Termux dibuka.
 
