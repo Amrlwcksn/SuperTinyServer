@@ -15,7 +15,7 @@
 
 **SuperTinyServer (STS)** adalah solusi mini server portable berbasis Android dan Termux yang dirancang untuk mengubah perangkat smartphone/tablet Android menjadi server jaringan lokal yang hemat daya, ringan, dan mudah dinavigasi dari perangkat apa pun.
 
-### 🌟 Fitur Utama
+### Fitur Utama
 - **Live System Monitoring Dashboard**: Pemantauan penggunaan CPU, RAM, Storage, Uptime, dan informasi sistem secara *real-time*.
 - **Interactive Web Terminal**: Akses shell server (bash) langsung dari peramban web dengan dukungan PTY sungguhan (*powered by node-pty*), auto-completion, warna ANSI, dan editor terminal (`nano`/`vim`).
 - **File Sharing (File Drop) & Preview**: Berbagi file antar perangkat lokal, upload/download batch, buat folder, serta *inline preview* langsung untuk gambar, teks/kode, video, audio, dan dokumen PDF tanpa perlu mengunduh.
@@ -23,7 +23,7 @@
 - **Automatic IP Detection & Startup**: Otomatis mendeteksi IP jaringan lokal dan langsung menjalankan seluruh layanan begitu Termux dibuka.
 - **100% Offline Capable**: Seluruh dependensi web frontend (`xterm.js`, CSS, gambar) tersimpan secara lokal tanpa ketergantungan CDN internet.
 
-### 🏗️ Arsitektur Sistem
+### Arsitektur Sistem
 ```text
 Perangkat Android (Smartphone / Tablet)
  └── Termux Environment
