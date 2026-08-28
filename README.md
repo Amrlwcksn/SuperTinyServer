@@ -5,9 +5,7 @@
 <h1 align="center">SuperTinyServer (STS)</h1>
 
 <p align="center">
-  <b>Mini Server Portable Berbasis Android & Termux</b><br>
-  Ubah perangkat Android bekas atau tablet kamu menjadi mini server lokal hemat daya, lengkap dengan Web Dashboard, File Sharing, Terminal Interaktif, dan SSH Server.
-</p>
+  <b>Mini Server Portable Berbasis Android & Termux</b>
 
 ---
 
