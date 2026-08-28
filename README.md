@@ -44,7 +44,7 @@ Panduan lengkap mulai dari mendapatkan aplikasi Termux di Android hingga SuperTi
 > [!IMPORTANT]
 > **Jangan mengunduh Termux dari Google Play Store** karena versi Play Store sudah tidak diperbarui lagi. Unduh versi resmi terbaru dari F-Droid.
 
-1. Buka browser di perangkat Android Anda dan akses [Termux di F-Droid](https://f-droid.org/packages/com.termux/).
+1. Buka browser di perangkat Android Anda dan akses [Termux-app/releases](https://github.com/termux/termux-app/releases).
 2. Unduh dan instal APK Termux versi terbaru.
 3. Buka aplikasi Termux yang telah terinstal.
 4. *(Opsional)* Berikan izin akses penyimpanan untuk mempermudah berbagi folder unduhan:
