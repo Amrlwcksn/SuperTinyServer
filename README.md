@@ -2,539 +2,135 @@
   <img src="server/public/STSLogo.png" alt="SuperTinyServer Logo" width="180">
 </p>
 
-<h1 align="center">SuperTinyServer</h1>
+<h1 align="center">SuperTinyServer (STS)</h1>
 
 <p align="center">
-  <b>Mini Server Berbasis Android & Termux</b><br>
-  SuperTinyServer adalah mini server yang memungkinkan perangkat Android digunakan sebagai server ringan dalam jaringan lokal.
+  <b>Mini Server Portable Berbasis Android & Termux</b><br>
+  Ubah perangkat Android bekas atau tablet kamu menjadi mini server lokal hemat daya, lengkap dengan Web Dashboard, File Sharing, Terminal Interaktif, dan SSH Server.
 </p>
 
-Project ini menyediakan SSH Server dan Web Dashboard yang dapat berjalan secara otomatis ketika Termux dibuka.
-
-SuperTinyServer dirancang sebagai project eksperimen dan dapat dikembangkan menjadi portable mini homelab berbasis Android.
-
 ---
 
-## Features
+## 1. Tentang Projek
 
-Saat ini SuperTinyServer memiliki fitur:
+**SuperTinyServer (STS)** adalah solusi mini server portable berbasis Android dan Termux yang dirancang untuk mengubah perangkat smartphone/tablet Android menjadi server jaringan lokal yang hemat daya, ringan, dan mudah dinavigasi dari perangkat apa pun.
 
-- SSH Server menggunakan OpenSSH
-- Web Dashboard berbasis Node.js dan Express
-- Automatic IP Detection
-- Dynamic IP Support
-- Automatic SSH Startup
-- Automatic Dashboard Startup
-- Automatic Browser Opening
-- Server Information Display
-- Portable Project Structure
-- Easy Installation
-- Automatic Startup Configuration
+### 🌟 Fitur Utama
+- **Live System Monitoring Dashboard**: Pemantauan penggunaan CPU, RAM, Storage, Uptime, dan informasi sistem secara *real-time*.
+- **Interactive Web Terminal**: Akses shell server (bash) langsung dari peramban web dengan dukungan PTY sungguhan (*powered by node-pty*), auto-completion, warna ANSI, dan editor terminal (`nano`/`vim`).
+- **File Sharing (File Drop) & Preview**: Berbagi file antar perangkat lokal, upload/download batch, buat folder, serta *inline preview* langsung untuk gambar, teks/kode, video, audio, dan dokumen PDF tanpa perlu mengunduh.
+- **SSH Remote Access**: Server SSH bawaan (`port 8022`) melalui OpenSSH untuk akses command line jarak jauh.
+- **Automatic IP Detection & Startup**: Otomatis mendeteksi IP jaringan lokal dan langsung menjalankan seluruh layanan begitu Termux dibuka.
+- **100% Offline Capable**: Seluruh dependensi web frontend (`xterm.js`, CSS, gambar) tersimpan secara lokal tanpa ketergantungan CDN internet.
 
----
-
-## Architecture
-
+### 🏗️ Arsitektur Sistem
 ```text
-Android Tablet
-│
-└── Termux
-    │
-    ├── OpenSSH
-    │   └── SSH Server
-    │       └── Port 8022
-    │
-    ├── Node.js
-    │   └── Express
-    │       └── Web Dashboard
-    │           └── Port 3000
-    │
-    └── SuperTinyServer
-        │
-        ├── config/
-        ├── scripts/
-        ├── server/
-        └── logs/
+Perangkat Android (Smartphone / Tablet)
+ └── Termux Environment
+      ├── OpenSSH Server ─────── Port 8022 (Remote Shell)
+      └── Node.js + Express ──── Port 3000 (Web Server)
+           ├── Web Dashboard (System Monitoring & Info)
+           ├── Interactive Web Terminal (PTY WebSocket)
+           └── File Sharing (File Drop & Inline Preview)
 ```
 
 ---
 
-# Requirements
+## 2. Cara Instalasi & Penggunaan
 
-Untuk menggunakan SuperTinyServer diperlukan:
+Panduan lengkap mulai dari mendapatkan aplikasi Termux di Android hingga SuperTinyServer online dan dapat diakses melalui jaringan lokal (Wi-Fi).
 
-- Android Device
-- Termux
-- Wi-Fi atau jaringan lokal
-- Git
+### Langkah 1: Mendapatkan & Menginstal Termux
+> [!IMPORTANT]
+> **Jangan mengunduh Termux dari Google Play Store** karena versi Play Store sudah tidak diperbarui lagi. Unduh versi resmi terbaru dari F-Droid.
 
-Installer akan secara otomatis menginstall dependency berikut:
+1. Buka browser di perangkat Android Anda dan akses [Termux di F-Droid](https://f-droid.org/packages/com.termux/).
+2. Unduh dan instal APK Termux versi terbaru.
+3. Buka aplikasi Termux yang telah terinstal.
+4. *(Opsional)* Berikan izin akses penyimpanan untuk mempermudah berbagi folder unduhan:
+   ```bash
+   termux-setup-storage
+   ```
 
-- Node.js
-- OpenSSH
-- Curl
-- Node.js dependencies
-
----
-
-# Installation
-
-Clone repository:
-
+### Langkah 2: Mengunduh SuperTinyServer
+Di dalam aplikasi Termux, perbarui package dan instal Git:
 ```bash
-git clone YOUR_REPOSITORY_URL
+pkg update && pkg upgrade -y
+pkg install git -y
 ```
 
-Masuk ke folder project:
-
+Kemudian clone repository SuperTinyServer dan masuk ke foldernya:
 ```bash
-cd supertinyserver
+git clone https://github.com/Amrlwcksn/SuperTinyServer.git
+cd SuperTinyServer
 ```
 
-Jalankan installer:
-
+### Langkah 3: Menjalankan Skrip Instalasi
+Jalankan skrip instalasi yang sudah disediakan:
 ```bash
 ./install.sh
 ```
 
-Installer akan melakukan:
+Proses instalasi otomatis akan:
+1. Memasang paket dependensi sistem (`Node.js`, `OpenSSH`, `curl`, `build-essential`).
+2. Mengunduh dependensi Node.js (`express`, `multer`, `ws`, `node-pty`, `xterm`).
+3. Menyiapkan konfigurasi *automatic startup* pada `.bashrc` Termux.
+4. Menjalankan layanan SuperTinyServer.
 
-1. Update package Termux.
-2. Install Node.js.
-3. Install OpenSSH.
-4. Install Curl.
-5. Install Node.js dependencies menggunakan `npm install`.
-6. Memberikan permission pada script.
-7. Mengatur automatic startup.
-8. Menjalankan SuperTinyServer.
-
----
-
-# Automatic Startup
-
-Setelah instalasi selesai, SuperTinyServer akan otomatis berjalan ketika Termux dibuka.
-
-Urutan proses:
+### Langkah 4: Mengakses Server di Jaringan Lokal
+Setelah proses instalasi selesai (atau setiap kali aplikasi Termux dibuka kembali), layar Termux akan menampilkan banner informasi server:
 
 ```text
-Open Termux
-    │
-    ▼
-Start SSH Server
-    │
-    ▼
-Start Web Dashboard
-    │
-    ▼
-Wait for Dashboard
-    │
-    ▼
-Detect Local IP Address
-    │
-    ▼
-Display Server Information
-    │
-    ▼
-Open Dashboard Automatically
-```
-
-Contoh tampilan:
-
-```text
-Starting SuperTinyServer...
-
-[1/3] Starting SSH Server...
-[2/3] Starting Dashboard...
-[3/3] Waiting for Dashboard...
-
 ╔══════════════════════════════════════════════════╗
 ║              SUPERTINYSERVER ONLINE              ║
 ╠══════════════════════════════════════════════════╣
 ║                                                  ║
 ║  DASHBOARD                                       ║
-║  http://192.168.x.x:3000                         ║
+║  http://192.168.1.15:3000                        ║
 ║                                                  ║
 ║  SSH CONNECTION                                  ║
-║  ssh -p 8022 username@192.168.x.x                ║
+║  ssh -p 8022 username@192.168.1.15               ║
 ║                                                  ║
 ╚══════════════════════════════════════════════════╝
 ```
 
-Setelah proses boot selesai, browser Android akan otomatis membuka Web Dashboard.
+1. **Akses Dashboard dari Browser (Laptop / HP / Tablet di Wi-Fi yang sama)**:
+   Buka peramban web dan ketik URL IP yang tertera, contohnya:
+   ```text
+   http://192.168.1.15:3000
+   ```
+2. **Akses Remote SSH dari Laptop**:
+   Buka Terminal atau PowerShell di laptop/komputer Anda, lalu jalankan:
+   ```bash
+   ssh -p 8022 username@192.168.1.15
+   ```
 
 ---
 
-# Web Dashboard
+## 3. Lisensi
 
-Dashboard berjalan pada port:
+Proyek ini dirilis di bawah lisensi **[MIT License](LICENSE)**.
 
 ```text
-3000
+MIT License
+
+Copyright (c) 2026 SuperTinyServer
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 ```
-
-Contoh akses:
-
-```text
-http://192.168.1.5:3000
-```
-
-IP address dapat berubah tergantung jaringan Wi-Fi yang digunakan.
-
-SuperTinyServer akan mencoba mendeteksi IP address secara otomatis.
-
----
-
-# SSH Access
-
-SSH Server berjalan menggunakan port:
-
-```text
-8022
-```
-
-Untuk terhubung dari komputer:
-
-```bash
-ssh -p 8022 USERNAME@IP_ADDRESS
-```
-
-Contoh:
-
-```bash
-ssh -p 8022 u0_a319@192.168.1.5
-```
-
-Username dan IP address dapat berbeda pada setiap perangkat Android.
-
----
-
-# Dynamic IP
-
-SuperTinyServer tidak bergantung pada IP statis.
-
-Misalnya perangkat sebelumnya mendapatkan:
-
-```text
-192.168.1.5
-```
-
-Kemudian berpindah ke jaringan lain:
-
-```text
-192.168.0.10
-```
-
-Dashboard dan informasi server akan menggunakan IP yang terdeteksi pada jaringan saat ini.
-
----
-
-# Project Structure
-
-```text
-supertinyserver/
-│
-├── config/
-│   └── config.sh
-│
-├── logs/
-│   └── .gitkeep
-│
-├── scripts/
-│   ├── info.sh
-│   ├── start-dashboard.sh
-│   ├── start-ssh.sh
-│   └── start.sh
-│
-├── server/
-│   │
-│   ├── public/
-│   │   ├── index.html
-│   │   ├── script.js
-│   │   └── style.css
-│   │
-│   └── server.js
-│
-├── install.sh
-├── uninstall.sh
-├── package.json
-├── package-lock.json
-├── .gitignore
-└── README.md
-```
-
----
-
-# Scripts
-
-## Start SuperTinyServer
-
-Menjalankan seluruh service:
-
-```bash
-./scripts/start.sh
-```
-
-Service yang dijalankan:
-
-- SSH Server
-- Web Dashboard
-- Server Information Display
-- Automatic Browser Opening
-
----
-
-## Start SSH Server
-
-Menjalankan SSH Server:
-
-```bash
-./scripts/start-ssh.sh
-```
-
-SSH berjalan pada port:
-
-```text
-8022
-```
-
----
-
-## Start Dashboard
-
-Menjalankan Web Dashboard:
-
-```bash
-./scripts/start-dashboard.sh
-```
-
-Dashboard berjalan pada:
-
-```text
-Port 3000
-```
-
----
-
-## Server Information
-
-Menampilkan informasi SuperTinyServer:
-
-```bash
-./scripts/info.sh
-```
-
-Informasi yang ditampilkan:
-
-- Dashboard URL
-- IP Address
-- SSH Port
-- Username
-- SSH Connection Command
-
----
-
-# API
-
-SuperTinyServer menyediakan API sederhana:
-
-```text
-/api/server-info
-```
-
-Contoh:
-
-```bash
-curl http://127.0.0.1:3000/api/server-info
-```
-
-Contoh response:
-
-```json
-{
-  "hostname": "localhost",
-  "username": "u0_a319",
-  "ip": "192.168.1.5",
-  "port": 8022,
-  "nodeVersion": "v26.3.1",
-  "platform": "Android / Termux",
-  "uptime": 123456,
-  "sshCommand": "ssh -p 8022 u0_a319@192.168.1.5"
-}
-```
-
-Nilai IP address, username, Node.js version, dan uptime dapat berbeda pada setiap perangkat.
-
----
-
-# Manual Usage
-
-Jika automatic startup belum aktif, SuperTinyServer dapat dijalankan secara manual:
-
-```bash
-cd ~/supertinyserver
-./scripts/start.sh
-```
-
-Untuk mengecek API:
-
-```bash
-curl http://127.0.0.1:3000/api/server-info
-```
-
----
-
-# Logs
-
-Log dashboard disimpan pada:
-
-```text
-logs/dashboard.log
-```
-
-Untuk melihat log:
-
-```bash
-cat logs/dashboard.log
-```
-
-Untuk memantau log secara realtime:
-
-```bash
-tail -f logs/dashboard.log
-```
-
----
-
-# Uninstall
-
-Untuk menghapus konfigurasi automatic startup:
-
-```bash
-./uninstall.sh
-```
-
-Uninstaller akan:
-
-- Menghapus konfigurasi SuperTinyServer dari `.bashrc`
-- Menghentikan Web Dashboard
-
-Project files tidak langsung dihapus.
-
-Untuk menghapus seluruh project:
-
-```bash
-rm -rf ~/supertinyserver
-```
-
----
-
-# Roadmap
-
-## Version 0.1.0
-
-- [x] SSH Server
-- [x] Web Dashboard
-- [x] Automatic IP Detection
-- [x] Dynamic IP Support
-- [x] Automatic Startup
-- [x] Automatic Browser Opening
-- [x] Node.js + Express
-- [x] Portable Project Structure
-- [x] Installer Script
-
----
-
-## Future Features
-
-### System Monitoring
-
-- [ ] CPU Usage
-- [ ] RAM Usage
-- [ ] Storage Usage
-- [ ] Battery Information
-- [ ] Temperature Information
-- [ ] Network Statistics
-- [ ] Server Uptime
-
-### Service Manager
-
-- [ ] Service Status
-- [ ] Start Service
-- [ ] Stop Service
-- [ ] Restart Service
-- [ ] Process Monitoring
-
-### Storage
-
-- [ ] External Storage Detection
-- [ ] Storage Information
-- [ ] File Browser
-- [ ] File Upload
-- [ ] File Download
-
-### Server Features
-
-- [ ] File Server
-- [ ] Local Network File Sharing
-- [ ] Project Hosting
-- [ ] Mini Web Server
-- [ ] Development Environment
-
-### Experimental Features
-
-- [ ] Plugin System
-- [ ] Multiple Mini Projects
-- [ ] Server Terminal
-- [ ] Remote Command Execution
-- [ ] System Logs Dashboard
-
----
-
-# Development
-
-SuperTinyServer dibuat sebagai project eksperimen untuk mempelajari:
-
-- Linux
-- Android
-- Termux
-- SSH
-- Networking
-- Node.js
-- Express
-- Web Dashboard
-- Server Management
-- Homelab
-
-Project ini dirancang agar dapat terus dikembangkan menjadi platform mini server portable.
-
----
-
-# Version
-
-Current Version:
-
-```text
-v0.1.0
-```
-
----
-
-# License
-
-This project is licensed under the MIT License.
-
----
-
-## Built With
-
-- Termux
-- Node.js
-- Express
-- OpenSSH
-- Android
-
----
-
-# SuperTinyServer
-
-Turn your Android device into a tiny experimental server.
